@@ -24,101 +24,116 @@
           - button "Equipe" [ref=e21]:
             - img [ref=e22]
             - text: Equipe
-        - link "Agendamentos" [ref=e27] [cursor=pointer]:
-          - /url: /bookings
-          - button "Agendamentos" [ref=e28]:
+        - link "Galeria" [ref=e27] [cursor=pointer]:
+          - /url: /gallery
+          - button "Galeria" [ref=e28]:
             - img [ref=e29]
+            - text: Galeria
+        - link "Agendamentos" [ref=e31] [cursor=pointer]:
+          - /url: /bookings
+          - button "Agendamentos" [ref=e32]:
+            - img [ref=e33]
             - text: Agendamentos
-        - button "Teste Usuário Cliente" [ref=e32] [cursor=pointer]:
-          - img [ref=e34]
-          - generic [ref=e37]: Teste Usuário
-          - generic [ref=e38]: Cliente
-          - img [ref=e39]
-  - generic [ref=e41]:
-    - generic [ref=e42]:
+        - link "Favoritos" [ref=e35] [cursor=pointer]:
+          - /url: /favorites
+          - button "Favoritos" [ref=e36]:
+            - img [ref=e37]
+            - text: Favoritos
+        - link "Personalizar" [ref=e39] [cursor=pointer]:
+          - /url: /personalization
+          - button "Personalizar" [ref=e40]:
+            - img [ref=e41]
+            - text: Personalizar
+        - button "Teste Usuário Cliente" [ref=e45] [cursor=pointer]:
+          - img [ref=e47]
+          - generic [ref=e50]: Teste Usuário
+          - generic [ref=e51]: Cliente
+          - img [ref=e52]
+  - generic [ref=e54]:
+    - generic [ref=e55]:
       - text: Este site utiliza cookies para melhorar sua experiência. Ao continuar, você concorda com nossa
-      - link "Política de Privacidade" [ref=e43] [cursor=pointer]:
+      - link "Política de Privacidade" [ref=e56] [cursor=pointer]:
         - /url: /termos
       - text: .
-    - button "Aceitar" [ref=e44] [cursor=pointer]
-  - main [ref=e45]:
-    - generic [ref=e46]:
-      - generic [ref=e50]:
-        - generic [ref=e51]:
-          - generic [ref=e52]:
-            - img [ref=e53]
+    - button "Aceitar" [ref=e57] [cursor=pointer]
+  - main [ref=e58]:
+    - generic [ref=e59]:
+      - generic [ref=e63]:
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - img [ref=e66]
             - text: Serviço Premium de Limpeza
-          - heading "Limpeza Profissional que Você Merece" [level=1] [ref=e56]:
+          - heading "Limpeza Profissional que Você Merece" [level=1] [ref=e69]:
             - text: Limpeza Profissional que
-            - generic [ref=e57]: Você Merece
-          - paragraph [ref=e58]: Serviços de limpeza para residências e empresas. Rápido, confiável e com qualidade garantida!
-        - generic [ref=e59]:
-          - link "Ver Serviços" [ref=e60] [cursor=pointer]:
+            - generic [ref=e70]: Você Merece
+          - paragraph [ref=e71]: Serviços de limpeza para residências e empresas. Rápido, confiável e com qualidade garantida!
+        - generic [ref=e72]:
+          - link "Ver Serviços" [ref=e73] [cursor=pointer]:
             - /url: /services
-            - button "Ver Serviços" [ref=e61]:
+            - button "Ver Serviços" [ref=e74]:
               - text: Ver Serviços
-              - img [ref=e62]
-          - link "Começar Agora" [ref=e64] [cursor=pointer]:
+              - img [ref=e75]
+          - link "Começar Agora" [ref=e77] [cursor=pointer]:
             - /url: /auth/register
-            - button "Começar Agora" [ref=e65]
-      - generic [ref=e69]:
-        - generic [ref=e70]:
-          - heading "Por que escolher a Leidy Cleaner?" [level=2] [ref=e71]
-          - paragraph [ref=e72]: Descubra os benefícios de contratar nossos serviços profissionais
-        - generic [ref=e73]:
-          - generic [ref=e75]:
-            - img [ref=e77]
-            - heading "100% Seguro" [level=3] [ref=e79]
-            - paragraph [ref=e80]: Profissionais verificados e pagamentos protegidos
-          - generic [ref=e82]:
-            - img [ref=e84]
-            - heading "Agendamento Rápido" [level=3] [ref=e87]
-            - paragraph [ref=e88]: Marque seu horário em poucos cliques
-          - generic [ref=e90]:
-            - img [ref=e92]
-            - heading "Qualidade Garantida" [level=3] [ref=e94]
-            - paragraph [ref=e95]: Avaliações reais de clientes satisfeitos
-          - generic [ref=e97]:
-            - img [ref=e99]
-            - heading "Equipe Especializada" [level=3] [ref=e104]
-            - paragraph [ref=e105]: Profissionais treinados e experientes
-      - generic [ref=e107]:
-        - generic [ref=e108]:
-          - heading "Nossos Serviços" [level=2] [ref=e109]
-          - paragraph [ref=e110]: Escolha o serviço ideal e agende com facilidade
-        - generic [ref=e112]:
-          - textbox "Buscar serviços..." [ref=e113]
-          - combobox [ref=e114]:
+            - button "Começar Agora" [ref=e78]
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - heading "Por que escolher a Leidy Cleaner?" [level=2] [ref=e84]
+          - paragraph [ref=e85]: Descubra os benefícios de contratar nossos serviços profissionais
+        - generic [ref=e86]:
+          - generic [ref=e88]:
+            - img [ref=e90]
+            - heading "100% Seguro" [level=3] [ref=e92]
+            - paragraph [ref=e93]: Profissionais verificados e pagamentos protegidos
+          - generic [ref=e95]:
+            - img [ref=e97]
+            - heading "Agendamento Rápido" [level=3] [ref=e100]
+            - paragraph [ref=e101]: Marque seu horário em poucos cliques
+          - generic [ref=e103]:
+            - img [ref=e105]
+            - heading "Qualidade Garantida" [level=3] [ref=e107]
+            - paragraph [ref=e108]: Avaliações reais de clientes satisfeitos
+          - generic [ref=e110]:
+            - img [ref=e112]
+            - heading "Equipe Especializada" [level=3] [ref=e117]
+            - paragraph [ref=e118]: Profissionais treinados e experientes
+      - generic [ref=e121]:
+        - generic [ref=e122]:
+          - heading "Nossos Serviços" [level=2] [ref=e123]
+          - paragraph [ref=e124]: Escolha o serviço ideal e agende com facilidade
+        - generic [ref=e126]:
+          - textbox "Buscar serviços..." [ref=e127]
+          - combobox [ref=e128]:
             - option "Todas as categorias" [selected]
-          - button "Limpar" [ref=e115] [cursor=pointer]
-        - link "Ver Todos os Serviços" [ref=e117] [cursor=pointer]:
-          - /url: /services
-          - button "Ver Todos os Serviços" [ref=e118]:
-            - text: Ver Todos os Serviços
-            - img [ref=e119]
-      - generic [ref=e123]:
-        - generic [ref=e124]:
-          - heading "Pronto para uma limpeza profissional?" [level=2] [ref=e125]
-          - paragraph [ref=e126]: Agende seu serviço hoje mesmo e tenha uma experiência excepcional
-        - generic [ref=e127]:
-          - link "Criar Conta Grátis" [ref=e128] [cursor=pointer]:
+            - option "Comercial"
+            - option "Especializada"
+            - option "Residencial"
+          - button "Limpar" [ref=e129] [cursor=pointer]
+      - generic [ref=e134]:
+        - generic [ref=e135]:
+          - heading "Pronto para uma limpeza profissional?" [level=2] [ref=e136]
+          - paragraph [ref=e137]: Agende seu serviço hoje mesmo e tenha uma experiência excepcional
+        - generic [ref=e138]:
+          - link "Criar Conta Grátis" [ref=e139] [cursor=pointer]:
             - /url: /auth/register
-            - button "Criar Conta Grátis" [ref=e129]:
-              - img [ref=e130]
+            - button "Criar Conta Grátis" [ref=e140]:
+              - img [ref=e141]
               - text: Criar Conta Grátis
-          - link "Falar com Especialista" [ref=e133] [cursor=pointer]:
+          - link "Falar com Especialista" [ref=e144] [cursor=pointer]:
             - /url: /contact
-            - button "Falar com Especialista" [ref=e134]
-  - generic [ref=e139] [cursor=pointer]:
-    - button "Open Next.js Dev Tools" [ref=e140]:
-      - img [ref=e141]
-    - generic [ref=e144]:
-      - button "Open issues overlay" [ref=e145]:
-        - generic [ref=e146]:
-          - generic [ref=e147]: "0"
-          - generic [ref=e148]: "1"
-        - generic [ref=e149]: Issue
-      - button "Collapse issues badge" [ref=e150]:
-        - img [ref=e151]
-  - alert [ref=e153]
+            - button "Falar com Especialista" [ref=e145]
+  - button [ref=e146] [cursor=pointer]:
+    - img [ref=e147]
+  - generic [ref=e153] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e154]:
+      - img [ref=e155]
+    - generic [ref=e158]:
+      - button "Open issues overlay" [ref=e159]:
+        - generic [ref=e160]:
+          - generic [ref=e161]: "0"
+          - generic [ref=e162]: "1"
+        - generic [ref=e163]: Issue
+      - button "Collapse issues badge" [ref=e164]:
+        - img [ref=e165]
+  - alert [ref=e167]
 ```

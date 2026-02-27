@@ -1,7 +1,7 @@
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
+- generic [ref=e1]:
   - navigation [ref=e2]:
     - generic [ref=e4]:
       - link "Leidy Cleaner Leidy Cleaner" [ref=e5] [cursor=pointer]:
@@ -24,25 +24,54 @@
           - button "Equipe" [ref=e21]:
             - img [ref=e22]
             - text: Equipe
-        - generic [ref=e27]:
-          - link "Entrar" [ref=e28] [cursor=pointer]:
+        - link "Galeria" [ref=e27] [cursor=pointer]:
+          - /url: /gallery
+          - button "Galeria" [ref=e28]:
+            - img [ref=e29]
+            - text: Galeria
+        - generic [ref=e31]:
+          - button "Alternar tema" [ref=e32] [cursor=pointer]:
+            - img [ref=e33]
+          - link "Entrar" [ref=e35] [cursor=pointer]:
             - /url: /auth/login
-            - button "Entrar" [ref=e29]
-          - link "Cadastrar" [ref=e30] [cursor=pointer]:
+            - button "Entrar" [ref=e36]
+          - link "Cadastrar" [ref=e37] [cursor=pointer]:
             - /url: /auth/register
-            - button "Cadastrar" [ref=e31]
-  - generic [ref=e32]:
-    - generic [ref=e33]:
+            - button "Cadastrar" [ref=e38]
+  - generic [ref=e39]:
+    - generic [ref=e40]:
       - text: Este site utiliza cookies para melhorar sua experiência. Ao continuar, você concorda com nossa
-      - link "Política de Privacidade" [ref=e34] [cursor=pointer]:
+      - link "Política de Privacidade" [ref=e41] [cursor=pointer]:
         - /url: /termos
       - text: .
-    - button "Aceitar" [ref=e35] [cursor=pointer]
-  - main [ref=e36]:
-    - generic [ref=e38]:
-      - heading "404" [level=1] [ref=e39]
-      - heading "This page could not be found." [level=2] [ref=e41]
-  - button "Open Next.js Dev Tools" [ref=e47] [cursor=pointer]:
-    - img [ref=e48]
-  - alert [ref=e51]
+    - button "Aceitar" [ref=e42] [cursor=pointer]
+  - main [ref=e43]:
+    - generic [ref=e45]:
+      - heading "Registre-se" [level=1] [ref=e46]
+      - generic [ref=e47]:
+        - generic [ref=e48]:
+          - generic [ref=e49]: Nome Completo
+          - textbox "Seu nome" [ref=e50]: Playwright User
+        - generic [ref=e51]:
+          - generic [ref=e52]: Email
+          - textbox "seu@email.com" [ref=e53]: pw.user.1772220605254@example.com
+        - generic [ref=e54]:
+          - generic [ref=e55]: Telefone (opcional)
+          - textbox "(11) 99999-9999" [ref=e56]: "+5511999000111"
+        - generic [ref=e57]:
+          - generic [ref=e58]: Senha
+          - textbox "••••••••" [ref=e59]: pwtest1234
+        - generic [ref=e60]:
+          - generic [ref=e61]: Confirmar Senha
+          - textbox "••••••••" [active] [ref=e62]: pwtest1234
+        - button "Registrar" [ref=e63] [cursor=pointer]
+      - paragraph [ref=e65]:
+        - text: Já tem conta?
+        - link "Faça login" [ref=e66] [cursor=pointer]:
+          - /url: /auth/login
+  - button [ref=e67] [cursor=pointer]:
+    - img [ref=e68]
+  - button "Open Next.js Dev Tools" [ref=e75] [cursor=pointer]:
+    - img [ref=e76]
+  - alert [ref=e79]
 ```
