@@ -37,9 +37,14 @@ services:
       - JWT_SECRET=dev_jwt_secret_change_me
       - SMTP_HOST=smtp.gmail.com
       - SMTP_PORT=587
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - USE_BULL=true
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - avan-network
     healthcheck:
@@ -94,6 +99,20 @@ services:
       - avan-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for development (used by backend queues/cache)
+  redis:
+    image: redis:7-alpine
+    container_name: avan-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - avan-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5

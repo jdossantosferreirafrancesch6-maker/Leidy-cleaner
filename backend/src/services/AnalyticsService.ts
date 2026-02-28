@@ -274,6 +274,71 @@ export class AnalyticsService {
     }
   }
 
+  // --------- GOOGLE ANALYTICS 4 EVENT TRACKING ---------
+
+  /**
+   * Enviar evento customizado para GA4
+   */
+  static async trackEvent(userId: string, eventName: string, parameters?: Record<string, any>) {
+    try {
+      const GA4_API_KEY = process.env.GA4_API_KEY;
+      const GA4_MEASUREMENT_ID = process.env.GA4_MEASUREMENT_ID;
+      const GA4_ENDPOINT = 'https://www.google-analytics.com/mp/collect';
+
+      if (!GA4_API_KEY || !GA4_MEASUREMENT_ID) {
+        logger.debug('⚠️ GA4 não configurado, evento não rastreado');
+        return;
+      }
+
+      const payload = {
+        client_id: userId,
+        events: [
+          {
+            name: eventName,
+            params: {
+              ...parameters,
+              timestamp_micros: Date.now() * 1000,
+            },
+          },
+        ],
+      };
+
+      await axios.post(`${GA4_ENDPOINT}?api_secret=${GA4_API_KEY}&measurement_id=${GA4_MEASUREMENT_ID}`, payload);
+      logger.debug(`📊 Evento rastreado: ${eventName}`);
+    } catch (error) {
+      logger.debug('Erro ao rastrear evento GA4:', error);
+    }
+  }
+
+  /**
+   * Evento de compra (conversão)
+   */
+  static async trackPurchase(userId: string, transactionData: { bookingId?: string; value: number; currency?: string }) {
+    await this.trackEvent(userId, 'purchase', {
+      transaction_id: transactionData.bookingId || `txn_${Date.now()}`,
+      value: transactionData.value,
+      currency: transactionData.currency || 'BRL',
+    });
+  }
+
+  /**
+   * Evento de busca
+   */
+  static async trackSearch(userId: string, searchQuery: string, resultsCount: number) {
+    await this.trackEvent(userId, 'search', {
+      search_term: searchQuery,
+      results_count: resultsCount,
+    });
+  }
+
+  /**
+   * Verifica se GA4 está configurado
+   */
+  static isGA4Configured(): boolean {
+    return !!(process.env.GA4_API_KEY && process.env.GA4_MEASUREMENT_ID);
+  }
+
+
   /**
    * Exporta dados para CSV
    */

@@ -31,6 +31,13 @@ class CacheService {
                 socket: {
                     host: this.config.host,
                     port: this.config.port,
+                    reconnectStrategy: (retries) => {
+                        if (retries > 10) {
+                            logger_advanced_1.logger.warn('⚠️ Redis tentativas excedidas, desabilitando cache');
+                            return new Error('Max retries exceeded');
+                        }
+                        return retries * 100;
+                    },
                 },
                 password: this.config.password,
                 database: this.config.db,
@@ -41,18 +48,22 @@ class CacheService {
             });
             this.client.on('error', (err) => {
                 this.isConnected = false;
-                logger_advanced_1.logger.error('❌ Erro no Redis:', err);
+                // Silent logging for redis errors to avoid spam
             });
             this.client.on('ready', () => {
                 logger_advanced_1.logger.info('🔄 Redis pronto para uso');
             });
-            // Iniciar conexão (redis v4 requires explicit connect())
-            await this.client.connect();
+            // Connect with timeout to fail fast
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 5000));
+            await Promise.race([
+                this.client.connect(),
+                timeoutPromise,
+            ]);
         }
         catch (error) {
-            logger_advanced_1.logger.error('❌ Falha ao conectar ao Redis:', error);
-            // Fallback: continuar sem cache
+            logger_advanced_1.logger.warn('⚠️ Redis não disponível, continuando sem cache');
             this.isConnected = false;
+            this.client = null;
         }
     }
     /**
