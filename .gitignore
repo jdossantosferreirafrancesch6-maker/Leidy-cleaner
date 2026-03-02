@@ -81,5 +81,8 @@ backups/
 /docker/secrets/*
 !docker/secrets/*.example
 
+# SSL certificates produced by setup-ssl.sh
+certs/
+
 # ephemeral file used by Playwright global setup
 frontend/tests/.backend-pid

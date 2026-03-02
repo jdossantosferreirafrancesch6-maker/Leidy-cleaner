@@ -12,7 +12,7 @@ export class BookingService {
   ) {
     const result = await query(
       `INSERT INTO bookings (user_id, service_id, scheduled_date, total_price, address, notes, staff_id, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) RETURNING *`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, ${require('../utils/sql').sqlNow()}, ${require('../utils/sql').sqlNow()}) RETURNING *`, 
       [userId, serviceId, scheduledDate, totalPrice, address || null, notes || null, staffId || null]
     );
 
@@ -35,7 +35,7 @@ export class BookingService {
 
   static async updateStatus(id: string, status: string) {
     const result = await query(
-      `UPDATE bookings SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      `UPDATE bookings SET status = $1, updated_at = ${require('../utils/sql').sqlNow()} WHERE id = $2 RETURNING *`, 
       [status, id]
     );
     return result.length > 0 ? result[0] : null;
@@ -49,7 +49,7 @@ export class BookingService {
   // assign staff to booking
   static async assignStaff(bookingId: string, staffId: string) {
     const result = await query(
-      `UPDATE bookings SET staff_id = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      `UPDATE bookings SET staff_id = $1, updated_at = ${require('../utils/sql').sqlNow()} WHERE id = $2 RETURNING *`, 
       [staffId, bookingId]
     );
     return result.length > 0 ? result[0] : null;

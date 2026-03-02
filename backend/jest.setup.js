@@ -8,60 +8,98 @@ process.env.NODE_ENV = 'test';
 
 const path = require('path');
 
-const DB_TYPE = process.env.DB_TYPE || 'postgres';
+const { Pool } = require('pg');
 let pool = null;
 
-if (DB_TYPE !== 'sqlite') {
-  const { Pool } = require('pg');
-  pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    database: process.env.DB_NAME || 'postgres',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-  });
-}
+// Always use PostgreSQL for tests
+pool = new Pool({
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  database: process.env.DB_NAME || 'leidycleaner_test',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'postgres',
+});
 
 beforeAll(async () => {
+  // If tests are configured to use PostgreSQL we attempt to bring up a
+  // Docker Compose stack (mirroring frontend global-setup).  SQLite tests
+  // skip container startup entirely.
+  if (process.env.DB_TYPE === 'postgres') {
+    try {
+      const { execSync } = require('child_process');
+      const repoRoot = require('path').resolve(__dirname, '..');
+      // start containers (idempotent)
+      execSync(`docker-compose -f ${repoRoot}/docker-compose.test.yml up -d`, { stdio: 'inherit' });
+
+      // wait for postgres readiness
+      for (let i = 0; i < 20; i++) {
+        try {
+          execSync('docker exec leidycleaner-postgres-test pg_isready -U postgres', { stdio: 'ignore' });
+          break;
+        } catch {
+          await new Promise((r) => setTimeout(r, 500));
+        }
+      }
+
+      // ensure the test database exists
+      try {
+        execSync(`docker exec leidycleaner-postgres-test createdb -U postgres ${process.env.DB_NAME || 'leidycleaner_test'} 2>/dev/null || true`, { stdio: 'inherit' });
+      } catch {
+        // ignore
+      }
+    } catch (e) {
+      console.warn('⚠️  could not start test containers or create database', e && e.message);
+    }
+  }
   try {
     console.log('🧹 Setting up test database...');
 
-    let usedSqliteFallback = false;
-    if (DB_TYPE === 'sqlite') {
-      const sqlite3 = require('sqlite3');
-      const dbPath = process.env.DATABASE_LOCAL || path.join(__dirname, 'test.sqlite');
-      const db = new sqlite3.Database(dbPath);
-      // Delete data from tables
-      const tables = ['bookings', 'reviews', 'services', 'users', 'company_info', 'staff_availability'];
-      for (const t of tables) {
-        await new Promise((resolve, reject) => db.run(`DELETE FROM ${t}`, (err) => err ? reject(err) : resolve(null)));
-      }
-      db.close();
-      console.log('✅ SQLite test database cleaned');
-    } else {
-      // Try Postgres truncate; if it fails, fallback to SQLite cleanup
+    // If using SQLite for tests, prefer an ephemeral file in the system tmp
+    // directory to avoid permission issues on workspace-mounted paths.
+    if (process.env.DB_TYPE === 'sqlite') {
       try {
-        await pool.query('TRUNCATE TABLE bookings, reviews, services, users RESTART IDENTITY CASCADE');
+        const os = require('os');
+        const fs = require('fs');
+        const path = require('path');
+        // prefer explicit DATABASE_LOCAL if provided; otherwise create a per-run tmp file
+        if (!process.env.DATABASE_LOCAL) {
+          const tmpFile = path.join(os.tmpdir(), `leidycleaner_test_${process.pid}_${Date.now()}.db`);
+          process.env.DATABASE_LOCAL = tmpFile;
+        }
+        const dbDir = require('path').dirname(process.env.DATABASE_LOCAL);
+        if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true, mode: 0o777 });
+        // Remove any previous test DB file before running migrations to avoid
+        // deleting an open handle later (which can lead to SQLITE_READONLY).
+        try {
+          const dbPath = process.env.DATABASE_LOCAL;
+          if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
+        } catch (e) {
+          // ignore cleanup errors
+        }
+      } catch (e) {
+        console.warn('⚠️  Could not prepare tmp sqlite dir:', e && e.message);
+      }
+    }
+
+    // First, run migrations to create tables
+    console.log('🔄 Running migrations...');
+    try {
+      const { runMigrations } = require('./src/db/runMigrations');
+      await runMigrations();
+      console.log('✅ Migrations completed');
+    } catch (migErr) {
+      console.warn('⚠️  Migration error (may be expected if tables already exist):', migErr && migErr.message);
+    }
+
+    // Truncate all tables for clean test state
+    if (process.env.DB_TYPE === 'sqlite') {
+      // nothing: sqlite cleanup already handled before migrations
+    } else {
+      try {
+        await pool.query('TRUNCATE TABLE bookings, reviews, services, users, company_info, staff_availability RESTART IDENTITY CASCADE');
         console.log('✅ Database truncated successfully');
       } catch (pgErr) {
-        console.warn('⚠️  Postgres truncate failed, attempting SQLite cleanup fallback:', pgErr && pgErr.message);
-        usedSqliteFallback = true;
-      }
-
-      if (usedSqliteFallback) {
-        const sqlite3 = require('sqlite3');
-        const dbPath = process.env.DATABASE_LOCAL || path.join(__dirname, 'test.sqlite');
-        const db = new sqlite3.Database(dbPath);
-        const tables = ['bookings', 'reviews', 'services', 'users', 'company_info', 'staff_availability'];
-        for (const t of tables) {
-          try {
-            await new Promise((resolve, reject) => db.run(`DELETE FROM ${t}`, (err) => err ? reject(err) : resolve(null)));
-          } catch (e) {
-            // ignore missing tables
-          }
-        }
-        db.close();
-        console.log('✅ SQLite test database cleaned (fallback)');
+        console.warn('⚠️  Truncate failed (tables may not exist yet):', pgErr && pgErr.message);
       }
     }
 
@@ -134,6 +172,22 @@ afterAll(async () => {
     } catch (e) {}
 
     if (pool) await pool.end();
+    // If using ephemeral sqlite file for tests, try to remove it to avoid
+    // accumulating files in /tmp across runs.
+    try {
+      if (process.env.DB_TYPE === 'sqlite' && process.env.DATABASE_LOCAL) {
+        const fs = require('fs');
+        const dbPath = process.env.DATABASE_LOCAL;
+        if (fs.existsSync(dbPath)) {
+          try {
+            fs.unlinkSync(dbPath);
+          } catch (e) {
+            // best-effort cleanup, ignore errors
+          }
+        }
+      }
+    } catch (e) {}
+
     console.log('✅ Database connection closed');
   } catch (err) {
     console.error('❌ Error closing database:', err.message);

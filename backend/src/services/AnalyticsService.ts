@@ -1,5 +1,7 @@
 import { query } from '../utils/database';
 import { logger } from '../utils/logger-advanced';
+import axios from 'axios';
+import { sqlMonth } from '../utils/sql';
 
 export interface AnalyticsMetrics {
   totalUsers: number;
@@ -42,7 +44,7 @@ export class AnalyticsService {
       // Usuários
       const usersResult = await query('SELECT COUNT(*) as count FROM users');
       const activeUsersResult = await query(
-        "SELECT COUNT(*) as count FROM users WHERE last_login > datetime('now', '-30 days')"
+        `SELECT COUNT(*) as count FROM users WHERE last_login > ${require('../utils/sql').sqlAgoDays(30)}`
       );
 
       // Bookings
@@ -69,14 +71,15 @@ export class AnalyticsService {
       `);
 
       // Receita por mês
+      const monthExpr = sqlMonth('created_at');
       const revenueByMonthResult = await query(`
         SELECT
-          strftime('%Y-%m', created_at) as month,
+          ${monthExpr} as month,
           COALESCE(SUM(total_price), 0) as revenue,
           COUNT(*) as bookings
         FROM bookings
         WHERE status = 'completed'
-        GROUP BY strftime('%Y-%m', created_at)
+        GROUP BY ${monthExpr}
         ORDER BY month DESC
         LIMIT 12
       `);
@@ -84,11 +87,11 @@ export class AnalyticsService {
       // Crescimento de usuários
       const userGrowthResult = await query(`
         SELECT
-          strftime('%Y-%m', created_at) as month,
+          ${monthExpr} as month,
           COUNT(*) as new_users,
-          SUM(COUNT(*)) OVER (ORDER BY strftime('%Y-%m', created_at)) as total_users
+          SUM(COUNT(*)) OVER (ORDER BY ${monthExpr}) as total_users
         FROM users
-        GROUP BY strftime('%Y-%m', created_at)
+        GROUP BY ${monthExpr}
         ORDER BY month DESC
         LIMIT 12
       `);
@@ -177,7 +180,7 @@ export class AnalyticsService {
       const activeChatsResult = await query(`
         SELECT COUNT(*) as count
         FROM chat_rooms
-        WHERE updated_at > datetime('now', '-24 hours')
+        WHERE updated_at > ${require('../utils/sql').sqlAgoHours(24)}
       `);
 
       // Verificar saúde do sistema
@@ -188,7 +191,7 @@ export class AnalyticsService {
       const unassignedBookings = await query(`
         SELECT COUNT(*) as count
         FROM bookings
-        WHERE status = 'confirmed' AND (staff_id IS NULL OR staff_id = '')
+        WHERE status = 'confirmed' AND staff_id IS NULL
       `);
 
       if (parseInt(unassignedBookings[0].count) > 0) {
@@ -248,7 +251,7 @@ export class AnalyticsService {
           AVG(r.rating) as average_rating,
           COALESCE(SUM(b.total_price), 0) as total_revenue,
           CASE
-            WHEN COUNT(b.id) > 0 THEN ROUND(CAST(COUNT(CASE WHEN b.status = 'completed' THEN 1 END) AS REAL) / COUNT(b.id) * 100, 2)
+            WHEN COUNT(b.id) > 0 THEN ROUND(CAST(COUNT(CASE WHEN b.status = 'completed' THEN 1 END) AS NUMERIC) / COUNT(b.id) * 100, 2)
             ELSE 0
           END as efficiency
         FROM users u

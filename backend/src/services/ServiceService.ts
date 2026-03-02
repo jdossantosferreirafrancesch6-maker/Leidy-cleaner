@@ -2,6 +2,7 @@ import { query } from '../utils/database';
 import { logger } from '../utils/logger';
 import { Service } from '../types/models';
 import { MOCK_SERVICES } from '../utils/mockData';
+import { sqlNow } from '../utils/sql';
 
 export class ServiceService {
   static async getAll(filters?: {
@@ -20,7 +21,8 @@ export class ServiceService {
       }
 
       if (filters?.search) {
-        whereClause += ` AND (name ILIKE $${params.length + 1} OR description ILIKE $${params.length + 2})`;
+        // ILIKE is Postgres-specific; use LOWER(column) LIKE LOWER(?) for compatibility
+        whereClause += ` AND (LOWER(name) LIKE LOWER($${params.length + 1}) OR LOWER(description) LIKE LOWER($${params.length + 2}))`;
         params.push(`%${filters.search}%`);
         params.push(`%${filters.search}%`);
       }
@@ -100,7 +102,7 @@ export class ServiceService {
   }): Promise<Service> {
     const result = await query(
       `INSERT INTO services (name, description, base_price, duration_minutes, category, is_active, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
+       VALUES ($1, $2, $3, $4, $5, true, ${sqlNow()}, ${sqlNow()})
        RETURNING id, name, description, base_price, duration_minutes, category, is_active, created_at`,
       [
         serviceData.name,
@@ -148,7 +150,7 @@ export class ServiceService {
       return this.getById(id);
     }
 
-    fields.push(`updated_at = NOW()`);
+    fields.push(`updated_at = ${sqlNow()}`);
     values.push(id);
 
     const queryStr = `UPDATE services SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING *`;

@@ -1,6 +1,7 @@
+import pg from 'pg';
 export declare const query: (text: string, params?: any[]) => Promise<any[]>;
-export declare const getClient: () => Promise<any>;
-export declare const getDatabase: () => any;
+export declare const getClient: () => Promise<pg.PoolClient>;
+export declare const getDatabase: () => pg.Pool;
 export declare function waitForDatabase(options?: {
     timeoutMs?: number;
     intervalMs?: number;

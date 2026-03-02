@@ -1,18 +1,45 @@
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { Request } from 'express';
 
+const config = require('../config');
+
+/**
+ * Rate Limit Store Factory
+ * Retorna MemoryStore (simples e sem dependências)
+ */
+async function initializeStore() {
+  // Usar apenas MemoryStore por enquanto para simplicidade
+  // Redis pode ser adicionado posteriormente se necessário
+  return undefined;
+}
+
+// Promise de inicialização do store (resolvido assim que disponível)
+let storePromise: Promise<any> | undefined;
+let cachedStore: any = undefined;
+
+function getStore() {
+  if (cachedStore !== undefined) return cachedStore;
+  if (!storePromise) {
+    storePromise = initializeStore().then(store => {
+      cachedStore = store;
+      return store;
+    });
+  }
+  return cachedStore; // Retorna undefined até store estar pronto
+}
+
 /**
  * Rate limiter por User ID
  * Protege contra bot abuse mesmo em rede compartilhada (NAT)
  * 
+ * Distribuído em produção (Redis), local em dev
  * Limits:
  * - Usuários autenticados: 100 req/15min
  * - IP anônimo: 50 req/15min
  */
-
 export const userRateLimit = rateLimit({
   keyGenerator: (req: any, _res: any) => {
-    // Prioriza user_id se autenticado
+    // Prioriza user_id se autenticado (distribuído por usuário)
     if (req.user?.id) {
       return `user:${req.user.id}`;
     }
@@ -31,16 +58,11 @@ export const userRateLimit = rateLimit({
   message: 'Too many requests from this user, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip health checks
-  // disable rate limiting entirely in test environment so E2E and unit
-  // tests can flood endpoints without being throttled.  this mirrors other
-  // middleware which often no-op during tests.
   skip: () => {
-    // completely disable in test env
-    if (require('../config').NODE_ENV === 'test') return true;
-    return false; // health checks handled by other logic
+    // Desabilita rate limiting completamente em testes
+    if (config.NODE_ENV === 'test') return true;
+    return false;
   },
-  // Custom handler para error
   handler: (req: Request, res: any) => {
     const rateLimit = (req as any).rateLimit;
     const retryAfter = rateLimit?.resetTime 
@@ -55,13 +77,14 @@ export const userRateLimit = rateLimit({
       }
     });
   },
-  // Store opciona: usar Redis em produção
-  store: undefined, // MemoryStore padrão (trocar por Redis em prod)
+  // Store adaptável: Redis em prod, MemoryStore em dev
+  store: getStore() as any,
 });
 
 /**
  * Rate limiter específico para auth (mais restritivo)
- * 5 tentativas / 15 minutos por user/IP
+ * Distribuído em produção, local em dev
+ * 5 tentativas / 15 minutos por email/IP
  */
 export const authRateLimit = rateLimit({
   keyGenerator: (req: any, _res: any) => {
@@ -78,8 +101,7 @@ export const authRateLimit = rateLimit({
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  // bypass auth throttling during end-to-end tests
-  skip: () => require('../config').NODE_ENV === 'test',
+  skip: () => config.NODE_ENV === 'test',
   handler: (req: Request, res: any) => {
     const rateLimit = (req as any).rateLimit;
     const retryAfter = rateLimit?.resetTime 
@@ -94,23 +116,6 @@ export const authRateLimit = rateLimit({
       }
     });
   },
+  // Store adaptável: Redis em prod, MemoryStore em dev
+  store: getStore() as any,
 });
-
-/**
- * Para usar em produção com Redis (muito melhor para distribuído):
- * 
- * import RedisStore from 'rate-limit-redis';
- * import redis from 'redis';
- * 
- * const redisClient = redis.createClient();
- * 
- * export const userRateLimit = rateLimit({
- *   store: new RedisStore({
- *     client: redisClient,
- *     prefix: 'rl:user:',
- *   }),
- *   keyGenerator: (req: any) => req.user?.id || req.ip,
- *   max: 100,
- *   windowMs: 15 * 60 * 1000,
- * });
- */

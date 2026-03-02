@@ -1,8 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnalyticsService = void 0;
 const database_1 = require("../utils/database");
 const logger_advanced_1 = require("../utils/logger-advanced");
+const axios_1 = __importDefault(require("axios"));
 class AnalyticsService {
     /**
      * Obtém métricas gerais de analytics
@@ -14,7 +18,7 @@ class AnalyticsService {
                 : '';
             // Usuários
             const usersResult = await (0, database_1.query)('SELECT COUNT(*) as count FROM users');
-            const activeUsersResult = await (0, database_1.query)("SELECT COUNT(*) as count FROM users WHERE last_login > datetime('now', '-30 days')");
+            const activeUsersResult = await (0, database_1.query)("SELECT COUNT(*) as count FROM users WHERE last_login > NOW() - INTERVAL '30 days'");
             // Bookings
             const bookingsResult = await (0, database_1.query)(`SELECT COUNT(*) as count FROM bookings ${dateFilter.replace('created_at', 'created_at')}`);
             const completedResult = await (0, database_1.query)(`SELECT COUNT(*) as count FROM bookings WHERE status = 'completed' ${dateFilter ? 'AND ' + dateFilter.replace('WHERE', '').replace('created_at', 'created_at') : ''}`);
@@ -38,23 +42,23 @@ class AnalyticsService {
             // Receita por mês
             const revenueByMonthResult = await (0, database_1.query)(`
         SELECT
-          strftime('%Y-%m', created_at) as month,
+          to_char(created_at, 'YYYY-MM') as month,
           COALESCE(SUM(total_price), 0) as revenue,
           COUNT(*) as bookings
         FROM bookings
         WHERE status = 'completed'
-        GROUP BY strftime('%Y-%m', created_at)
+        GROUP BY to_char(created_at, 'YYYY-MM')
         ORDER BY month DESC
         LIMIT 12
       `);
             // Crescimento de usuários
             const userGrowthResult = await (0, database_1.query)(`
         SELECT
-          strftime('%Y-%m', created_at) as month,
+          to_char(created_at, 'YYYY-MM') as month,
           COUNT(*) as new_users,
-          SUM(COUNT(*)) OVER (ORDER BY strftime('%Y-%m', created_at)) as total_users
+          SUM(COUNT(*)) OVER (ORDER BY to_char(created_at, 'YYYY-MM')) as total_users
         FROM users
-        GROUP BY strftime('%Y-%m', created_at)
+        GROUP BY to_char(created_at, 'YYYY-MM')
         ORDER BY month DESC
         LIMIT 12
       `);
@@ -136,7 +140,7 @@ class AnalyticsService {
             const activeChatsResult = await (0, database_1.query)(`
         SELECT COUNT(*) as count
         FROM chat_rooms
-        WHERE updated_at > datetime('now', '-24 hours')
+        WHERE updated_at > NOW() - INTERVAL '24 hours'
       `);
             // Verificar saúde do sistema
             const alerts = [];
@@ -145,7 +149,7 @@ class AnalyticsService {
             const unassignedBookings = await (0, database_1.query)(`
         SELECT COUNT(*) as count
         FROM bookings
-        WHERE status = 'confirmed' AND (staff_id IS NULL OR staff_id = '')
+        WHERE status = 'confirmed' AND staff_id IS NULL
       `);
             if (parseInt(unassignedBookings[0].count) > 0) {
                 alerts.push(`${unassignedBookings[0].count} bookings sem staff atribuído`);
@@ -194,7 +198,7 @@ class AnalyticsService {
           AVG(r.rating) as average_rating,
           COALESCE(SUM(b.total_price), 0) as total_revenue,
           CASE
-            WHEN COUNT(b.id) > 0 THEN ROUND(CAST(COUNT(CASE WHEN b.status = 'completed' THEN 1 END) AS REAL) / COUNT(b.id) * 100, 2)
+            WHEN COUNT(b.id) > 0 THEN ROUND(CAST(COUNT(CASE WHEN b.status = 'completed' THEN 1 END) AS NUMERIC) / COUNT(b.id) * 100, 2)
             ELSE 0
           END as efficiency
         FROM users u
@@ -218,6 +222,63 @@ class AnalyticsService {
             logger_advanced_1.logger.error('Error getting staff performance:', error);
             throw new Error('Failed to get staff performance');
         }
+    }
+    // --------- GOOGLE ANALYTICS 4 EVENT TRACKING ---------
+    /**
+     * Enviar evento customizado para GA4
+     */
+    static async trackEvent(userId, eventName, parameters) {
+        try {
+            const GA4_API_KEY = process.env.GA4_API_KEY;
+            const GA4_MEASUREMENT_ID = process.env.GA4_MEASUREMENT_ID;
+            const GA4_ENDPOINT = 'https://www.google-analytics.com/mp/collect';
+            if (!GA4_API_KEY || !GA4_MEASUREMENT_ID) {
+                logger_advanced_1.logger.debug('⚠️ GA4 não configurado, evento não rastreado');
+                return;
+            }
+            const payload = {
+                client_id: userId,
+                events: [
+                    {
+                        name: eventName,
+                        params: {
+                            ...parameters,
+                            timestamp_micros: Date.now() * 1000,
+                        },
+                    },
+                ],
+            };
+            await axios_1.default.post(`${GA4_ENDPOINT}?api_secret=${GA4_API_KEY}&measurement_id=${GA4_MEASUREMENT_ID}`, payload);
+            logger_advanced_1.logger.debug(`📊 Evento rastreado: ${eventName}`);
+        }
+        catch (error) {
+            logger_advanced_1.logger.debug('Erro ao rastrear evento GA4:', error);
+        }
+    }
+    /**
+     * Evento de compra (conversão)
+     */
+    static async trackPurchase(userId, transactionData) {
+        await this.trackEvent(userId, 'purchase', {
+            transaction_id: transactionData.bookingId || `txn_${Date.now()}`,
+            value: transactionData.value,
+            currency: transactionData.currency || 'BRL',
+        });
+    }
+    /**
+     * Evento de busca
+     */
+    static async trackSearch(userId, searchQuery, resultsCount) {
+        await this.trackEvent(userId, 'search', {
+            search_term: searchQuery,
+            results_count: resultsCount,
+        });
+    }
+    /**
+     * Verifica se GA4 está configurado
+     */
+    static isGA4Configured() {
+        return !!(process.env.GA4_API_KEY && process.env.GA4_MEASUREMENT_ID);
     }
     /**
      * Exporta dados para CSV

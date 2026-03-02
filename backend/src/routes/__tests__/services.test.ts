@@ -29,6 +29,10 @@ describe('Services Routes', () => {
         phone: '11999999999'
       });
 
+    if (!adminResponse.body.data?.tokens?.accessToken) {
+      console.error('Failed to get admin token:', adminResponse.status, adminResponse.body);
+      throw new Error('Admin registration failed or token not returned');
+    }
     adminToken = adminResponse.body.data.tokens.accessToken;
 
     // Create regular user
@@ -42,6 +46,10 @@ describe('Services Routes', () => {
         phone: '11999999999'
       });
 
+    if (!userResponse.body.data?.tokens?.accessToken) {
+      console.error('Failed to get user token:', userResponse.status, userResponse.body);
+      throw new Error('User registration failed or token not returned');
+    }
     userToken = userResponse.body.data.tokens.accessToken;
   });
 

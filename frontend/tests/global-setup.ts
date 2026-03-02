@@ -11,8 +11,9 @@ const currentDir = path.dirname(new URL(import.meta.url).pathname);
 const repoRoot = path.resolve(currentDir, '../..');
 try {
   execSync(`docker-compose -f ${repoRoot}/docker-compose.test.yml up -d`, { stdio: 'inherit' });
-} catch (e) {
-  console.warn('could not start test containers', e.message || e);
+} catch (e: unknown) {
+  const errorMessage = e instanceof Error ? e.message : String(e);
+  console.warn('could not start test containers', errorMessage);
 }
 
 // wait for postgres readiness
@@ -29,8 +30,9 @@ for (let i = 0; i < 20; i++) {
 // initialized in a previous run)
 try {
   execSync(`docker exec leidycleaner-postgres-test createdb -U postgres leidycleaner_test 2>/dev/null || true`, { stdio: 'inherit' });
-} catch (e) {
-  console.warn('could not ensure test database exists', e.message || e);
+} catch (e: unknown) {
+  const errorMessage = e instanceof Error ? e.message : String(e);
+  console.warn('could not ensure test database exists', errorMessage);
 }
 
 // wait for redis readiness by pinging the container

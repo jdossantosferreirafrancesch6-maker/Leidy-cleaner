@@ -46,7 +46,7 @@ class CacheService {
                 this.isConnected = true;
                 logger_advanced_1.logger.info('✅ Conectado ao Redis');
             });
-            this.client.on('error', (err) => {
+            this.client.on('error', (_err) => {
                 this.isConnected = false;
                 // Silent logging for redis errors to avoid spam
             });

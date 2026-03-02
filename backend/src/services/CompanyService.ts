@@ -1,4 +1,5 @@
 import { query } from '../utils/database';
+import { sqlNow } from '../utils/sql';
 
 function camelize(obj: any): any {
   if (Array.isArray(obj)) return obj.map(camelize);
@@ -24,7 +25,7 @@ export class CompanyService {
     // simple upsert: insert a new row
     const sql = `INSERT INTO company_info
       (name, legal_name, email, phone, address, city, state, country, postal_code, logo_url, description, terms, created_at, updated_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now(),now()) RETURNING *`;
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,${sqlNow()},${sqlNow()}) RETURNING *`;
     const values = [
       info.name,
       info.legalName || info.legal_name,

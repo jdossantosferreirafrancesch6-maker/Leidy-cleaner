@@ -1,1 +1,1 @@
-{"version":3,"file":"userRateLimit.d.ts","sourceRoot":"","sources":["../../src/middleware/userRateLimit.ts"],"names":[],"mappings":"AAGA;;;;;;;GAOG;AAEH,eAAO,MAAM,aAAa,sDA+CxB,CAAC;AAEH;;;GAGG;AACH,eAAO,MAAM,aAAa,sDA+BxB,CAAC;AAEH;;;;;;;;;;;;;;;;;GAiBG"}
+{"version":3,"file":"userRateLimit.d.ts","sourceRoot":"","sources":["../../src/middleware/userRateLimit.ts"],"names":[],"mappings":"AA8BA;;;;;;;;GAQG;AACH,eAAO,MAAM,aAAa,sDA0CxB,CAAC;AAEH;;;;GAIG;AACH,eAAO,MAAM,aAAa,sDAgCxB,CAAC"}

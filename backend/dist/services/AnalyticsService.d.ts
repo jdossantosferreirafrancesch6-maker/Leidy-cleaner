@@ -55,6 +55,26 @@ export declare class AnalyticsService {
         efficiency: number;
     }>>;
     /**
+     * Enviar evento customizado para GA4
+     */
+    static trackEvent(userId: string, eventName: string, parameters?: Record<string, any>): Promise<void>;
+    /**
+     * Evento de compra (conversão)
+     */
+    static trackPurchase(userId: string, transactionData: {
+        bookingId?: string;
+        value: number;
+        currency?: string;
+    }): Promise<void>;
+    /**
+     * Evento de busca
+     */
+    static trackSearch(userId: string, searchQuery: string, resultsCount: number): Promise<void>;
+    /**
+     * Verifica se GA4 está configurado
+     */
+    static isGA4Configured(): boolean;
+    /**
      * Exporta dados para CSV
      */
     static exportBookingsCSV(startDate?: string, endDate?: string): Promise<string>;

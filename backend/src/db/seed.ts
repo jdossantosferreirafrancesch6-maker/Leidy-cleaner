@@ -8,7 +8,7 @@ async function seedDatabase() {
 
     // For tests, use direct database connection to avoid module conflicts
     let testQuery = query;
-    if (require('../config').NODE_ENV === 'test' && process.env.DB_TYPE !== 'sqlite') {
+    if (require('../config').NODE_ENV === 'test' && process.env.DB_TYPE === 'postgres') {
       const { Pool } = require('pg');
       const testPool = new Pool({
         host: process.env.DB_HOST || 'localhost',

@@ -1,5 +1,6 @@
-import { query } from '../utils/database';
+import { query, DB_TYPE } from '../utils/database';
 import { User, Availability } from '../types/auth';
+import { sqlNow } from '../utils/sql';
 
 export class StaffService {
   static async listStaff(): Promise<User[]> {
@@ -108,20 +109,29 @@ export class StaffService {
     upcoming: any[];
     stats: any;
   }> {
-    const today = await query(
-      `SELECT * FROM bookings 
-       WHERE staff_id = $1 AND scheduled_date::date = CURRENT_DATE AND status != 'cancelled'
-       ORDER BY scheduled_date ASC`,
-      [staffId]
-    );
+    let todaySql: string;
+    let upcomingSql: string;
 
-    const upcoming = await query(
-      `SELECT * FROM bookings 
-       WHERE staff_id = $1 AND scheduled_date::date BETWEEN CURRENT_DATE AND CURRENT_DATE + 7
-       AND status != 'cancelled'
-       ORDER BY scheduled_date ASC`,
-      [staffId]
-    );
+    if (DB_TYPE === 'sqlite') {
+      todaySql = `SELECT * FROM bookings 
+        WHERE staff_id = $1 AND DATE(scheduled_date) = DATE('now') AND status != 'cancelled'
+        ORDER BY scheduled_date ASC`;
+      upcomingSql = `SELECT * FROM bookings 
+        WHERE staff_id = $1 AND DATE(scheduled_date) BETWEEN DATE('now') AND DATE('now','+7 days')
+        AND status != 'cancelled'
+        ORDER BY scheduled_date ASC`;
+    } else {
+      todaySql = `SELECT * FROM bookings 
+        WHERE staff_id = $1 AND scheduled_date::date = CURRENT_DATE AND status != 'cancelled'
+        ORDER BY scheduled_date ASC`;
+      upcomingSql = `SELECT * FROM bookings 
+        WHERE staff_id = $1 AND scheduled_date::date BETWEEN CURRENT_DATE AND CURRENT_DATE + 7
+        AND status != 'cancelled'
+        ORDER BY scheduled_date ASC`;
+    }
+
+    const today = await query(todaySql, [staffId]);
+    const upcoming = await query(upcomingSql, [staffId]);
 
     const stats = await this.getStaffStats(staffId);
 
@@ -137,7 +147,7 @@ export class StaffService {
         COUNT(*) FILTER (WHERE status IN ('completed', 'pending', 'confirmed', 'in_progress')) as total_bookings,
         COUNT(*) FILTER (WHERE status = 'completed') as completed_bookings,
         COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled_bookings,
-        COUNT(*) FILTER (WHERE status IN ('confirmed', 'in_progress') AND scheduled_date > NOW()) as current_bookings,
+        COUNT(*) FILTER (WHERE status IN ('confirmed', 'in_progress') AND scheduled_date > ${sqlNow()}) as current_bookings,
         COALESCE(AVG(r.rating), 0) as avg_rating,
         COUNT(DISTINCT r.id) as review_count
       FROM bookings b
@@ -170,7 +180,7 @@ export class StaffService {
     const availability = await query(
       `SELECT COUNT(*) as count FROM staff_availability 
        WHERE staff_id = $1 AND day = $2 
-       AND start_time <= $3::time AND end_time > $3::time`,
+       AND start_time <= $3 AND end_time > $3`,
       [staffId, dayName, timeStr]
     );
 
@@ -183,7 +193,7 @@ export class StaffService {
   static async assignBooking(bookingId: string, staffId: string): Promise<any> {
     const result = await query(
       `UPDATE bookings 
-       SET staff_id = $1, status = 'confirmed', updated_at = NOW()
+       SET staff_id = $1, status = 'confirmed', updated_at = ${sqlNow()}
        WHERE id = $2
        RETURNING *`,
       [staffId, bookingId]
@@ -200,8 +210,8 @@ export class StaffService {
   ): Promise<any> {
     const result = await query(
       `UPDATE bookings 
-       SET status = $1, updated_at = NOW()
-       ${status === 'completed' ? ', completed_at = NOW()' : ''}
+       SET status = $1, updated_at = ${sqlNow()}
+       ${status === 'completed' ? `, completed_at = ${sqlNow()}` : ''}
        WHERE id = $2
        RETURNING *`,
       [status, bookingId]
@@ -222,7 +232,7 @@ export class StaffService {
     const result = await query(
       `INSERT INTO special_dates 
        (staff_id, start_date, end_date, type, reason, created_at)
-       VALUES ($1, $2, $3, $4, $5, NOW())
+       VALUES ($1, $2, $3, $4, $5, ${sqlNow()})
        RETURNING *`,
       [staffId, startDate, endDate, type, reason]
     );

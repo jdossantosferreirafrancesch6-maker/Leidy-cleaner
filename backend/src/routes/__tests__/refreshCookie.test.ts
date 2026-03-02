@@ -25,8 +25,16 @@ describe('Auth refresh via HttpOnly cookie', () => {
       phone: '11999999999'
     });
     expect(regRes.status).toBe(201);
+    // make sure Set-Cookie header was returned
+    // (log for debugging in case of future failures)
+    // eslint-disable-next-line no-console
+    console.log('register headers:', regRes.headers);
+    expect(regRes.headers['set-cookie']).toBeDefined();
+
     // Agent should store cookie; now call refresh endpoint without body
     const refreshRes = await agent.post('/api/v1/auth/refresh-token').send();
+    // eslint-disable-next-line no-console
+    console.log('refresh response status/cookies', refreshRes.status, refreshRes.headers);
     expect(refreshRes.status).toBe(200);
     expect(refreshRes.body).toHaveProperty('data');
     expect(refreshRes.body.data.tokens).toHaveProperty('accessToken');
@@ -52,6 +60,8 @@ describe('Auth refresh via HttpOnly cookie', () => {
     const refreshToken = reg.body.data.tokens.refreshToken;
 
     const res = await request(appNoCookie).post('/api/v1/auth/refresh-token').send({ refreshToken });
+    // eslint-disable-next-line no-console
+    console.log('body refresh:', res.body, 'status', res.status);
     expect(res.status).toBe(200);
     expect(res.body.data.tokens).toHaveProperty('accessToken');
     expect(res.body.data.tokens).toHaveProperty('refreshToken');

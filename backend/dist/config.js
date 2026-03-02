@@ -10,7 +10,7 @@ dotenv_1.default.config();
 exports.PORT = Number(process.env.PORT) || 3001;
 exports.NODE_ENV = process.env.NODE_ENV || 'development';
 exports.FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
-exports.DB_TYPE = process.env.DB_TYPE || 'sqlite';
+exports.DB_TYPE = process.env.DB_TYPE || 'postgres';
 exports.CORS_ALLOWED = [
     'http://localhost:3000',
     'http://localhost:3001',

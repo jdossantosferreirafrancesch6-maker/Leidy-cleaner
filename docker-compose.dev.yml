@@ -16,6 +16,27 @@ services:
       - avan-network
     restart: unless-stopped
 
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: avan-postgres
+    environment:
+      - POSTGRES_DB=leidy_cleaner_dev
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - avan-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   # Backend Service
   backend:
     build:
@@ -29,9 +50,10 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3001
+      - DB_TYPE=postgres
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_NAME=vammos_dev
+      - DB_NAME=leidy_cleaner_dev
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - JWT_SECRET=dev_jwt_secret_change_me
@@ -39,6 +61,7 @@ services:
       - SMTP_PORT=587
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_PASSWORD=
       - USE_BULL=true
     depends_on:
       db:
@@ -68,7 +91,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - NEXT_PUBLIC_API_URL=http://backend:3001
+      - NEXT_PUBLIC_API_URL=/api/v1
     depends_on:
       backend:
         condition: service_healthy
@@ -81,27 +104,6 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
-
-  # Database (Postgres) for development
-  db:
-    image: postgres:15
-    container_name: avan-postgres
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=vammos_dev
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - ./backend/postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - avan-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # Redis for development (used by backend queues/cache)
   redis:
@@ -123,4 +125,5 @@ networks:
 
 volumes:
   backend-data:
+  postgres-data:
   frontend-cache:

@@ -55,7 +55,7 @@ export class ChatService {
 
       const result = await query(
         `INSERT INTO chat_rooms (booking_id, customer_id, staff_id, unread_count, created_at, updated_at)
-         VALUES ($1, $2, $3, 0, NOW(), NOW()) RETURNING *`,
+         VALUES ($1, $2, $3, 0, ${require('../utils/sql').sqlNow()}, ${require('../utils/sql').sqlNow()}) RETURNING *`, 
         [bookingId, booking[0].user_id, booking[0].team_member_id]
       );
 
@@ -80,14 +80,14 @@ export class ChatService {
     try {
       const result = await query(
         `INSERT INTO chat_messages (booking_id, sender_id, sender_role, message, message_type, file_url, is_read, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, false, NOW()) RETURNING *`,
+         VALUES ($1, $2, $3, $4, $5, $6, false, ${require('../utils/sql').sqlNow()}) RETURNING *`, 
         [bookingId, senderId, senderRole, message, messageType, fileUrl]
       );
 
       // Atualizar último mensagem na sala
       await query(
         `UPDATE chat_rooms
-         SET last_message = $1, last_message_at = NOW(), updated_at = NOW(),
+         SET last_message = $1, last_message_at = ${require('../utils/sql').sqlNow()}, updated_at = ${require('../utils/sql').sqlNow()},
              unread_count = unread_count + 1
          WHERE booking_id = $2`,
         [message.substring(0, 100), bookingId] // Limitar tamanho da preview
@@ -180,7 +180,7 @@ export class ChatService {
       const roomsResult = await query('SELECT COUNT(*) as count FROM chat_rooms');
       const messagesResult = await query('SELECT COUNT(*) as count FROM chat_messages');
       const activeResult = await query(
-        "SELECT COUNT(*) as count FROM chat_rooms WHERE updated_at > NOW() - INTERVAL '24 hours'"
+        `SELECT COUNT(*) as count FROM chat_rooms WHERE updated_at > ${require('../utils/sql').sqlAgoHours(24)}`
       );
 
       return {

@@ -47,7 +47,54 @@ Plataforma SaaS para agendamento de serviços de limpeza residencial e comercial
 - ✅ Compressão GZIP
 - ✅ Cache de assets estáticos
 - ✅ Deploy script automatizado
+- ✅ GitHub Actions CI/CD (test, lint, build, publish, deploy)
 - ✅ Documentação completa de deployment
+
+---
+
+## 🚀 Quick Start (desenvolvimento)
+```bash
+# clonar repo
+git clone git@github.com:jdossantosferreirafrancesch6-maker/Leidy-cleaner.git
+cd Leidy-cleaner
+
+# criar variáveis de ambiente
+cp .env.example .env
+cp backend/.env.example backend/.env
+touch frontend/.env.local
+
+# instalar dependências
+cd backend && npm install --legacy-peer-deps && cd ../frontend && npm install --legacy-peer-deps
+
+# construir e subir containers
+docker-compose -f docker-compose.dev.yml up --build
+
+# acessar:
+# frontend -> http://localhost:3000
+# backend  -> http://localhost:3001/api/v1
+```
+
+## 🧪 Testes
+```bash
+# unit tests
+cd backend && npm test
+
+# integração
+cd backend && npm run test:integration
+
+# E2E (Playwright) - configurar em backend/ e2e/
+npm run e2e
+```
+
+## 📄 Documentação de API
+- Swagger UI: `http://localhost:3001/api-docs`
+- Endpoints estão definidos em `src/routes/`
+
+## 📦 Deploy em Produção
+Consulte `docs/DEPLOYMENT.md` para passos completos e variáveis de ambiente.
+
+*Fique à vontade para ajustar qualquer comando conforme seu ambiente.*
+
 
 ## 🎯 Arquitetura em Produção
 

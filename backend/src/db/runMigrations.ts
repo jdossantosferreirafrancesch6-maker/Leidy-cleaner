@@ -6,42 +6,27 @@ import { logger } from '../utils/logger';
 async function runMigrations() {
   try {
     logger.info('🔄 Starting database migrations...');
+    const DB_TYPE = process.env.DB_TYPE || (process.env.DATABASE_URL?.startsWith('sqlite') ? 'sqlite' : 'postgres');
 
-    // Create migrations tracking table if it doesn't exist
-    const dbType = process.env.DB_TYPE || 'postgres';
-    // choose the proper SQL depending on the database type.  the sqlite
-    // version must use CURRENT_TIMESTAMP – `datetime('now')` is not allowed as
-    // a DEFAULT expression and was causing a syntax error during the earlier
-    // run.  this mirrors the format used by the other sqlite migrations.
-    const createMigrationsTableSQL = dbType === 'sqlite'
-      ? `CREATE TABLE IF NOT EXISTS migrations (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL UNIQUE,
-          executed_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`
-      : `CREATE TABLE IF NOT EXISTS migrations (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(255) NOT NULL UNIQUE,
-          executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`;
-
-    // log the actual SQL in a single string so it can be debugged if it fails
-    logger.info(`Create migrations table SQL: ${createMigrationsTableSQL.replace(/\n/g, ' ')}`);
-    
-    logger.info('📊 About to create migrations table...');
-    try {
-      logger.info('📊 Calling query with SQL...');
-      const result = await query(createMigrationsTableSQL);
-      logger.info('📊 Query completed, result:', result);
-      logger.info('📊 Migrations table created or already exists');
-    } catch (tableErr) {
-      logger.error('❌ Failed to create migrations table. Error type:', typeof tableErr);
-      logger.error('❌ Error message:', tableErr instanceof Error ? tableErr.message : String(tableErr));
-      logger.error('❌ Full error:', tableErr);
-      throw tableErr;
+    // Create migrations tracking table
+    let createMigrationsTableSQL = '';
+    if (DB_TYPE === 'sqlite') {
+      createMigrationsTableSQL = `CREATE TABLE IF NOT EXISTS migrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      executed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`;
+    } else {
+      createMigrationsTableSQL = `CREATE TABLE IF NOT EXISTS migrations (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL UNIQUE,
+      executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`;
     }
 
-    logger.info('📋 Migrations tracking table ready');
+    logger.info('📊 Creating migrations table if not exists...');
+    await query(createMigrationsTableSQL);
+    logger.info('✅ Migrations table ready');
 
     // In test environment, clear migrations tracking so tests always apply current SQL
     if (require('../config').NODE_ENV === 'test') {
@@ -49,27 +34,22 @@ async function runMigrations() {
       await query('DELETE FROM migrations');
     }
 
-    // Read all migration files
-    const migrationsDir = path.join(__dirname, '../../migrations');
-    // Use SQLite migrations if DB_TYPE is sqlite
-    const actualMigrationsDir = dbType === 'sqlite'
-      ? path.join(__dirname, '../../migrations_sqlite')
-      : migrationsDir;
-    logger.info(`Using migrations dir: ${actualMigrationsDir} (dbType=${dbType})`);
+    // Read migration files from appropriate directory
+    const migrationsDir = path.join(__dirname, DB_TYPE === 'sqlite' ? '../../migrations_sqlite' : '../../migrations');
     
     // Verify the directory exists
-    if (!fs.existsSync(actualMigrationsDir)) {
-      logger.error(`❌ Migrations directory does not exist: ${actualMigrationsDir}`);
-      throw new Error(`Migrations directory not found: ${actualMigrationsDir}`);
+    if (!fs.existsSync(migrationsDir)) {
+      logger.error(`❌ Migrations directory does not exist: ${migrationsDir}`);
+      throw new Error(`Migrations directory not found: ${migrationsDir}`);
     }
     
-    const migrationFiles = fs.readdirSync(actualMigrationsDir)
+    const migrationFiles = fs.readdirSync(migrationsDir)
       .filter(file => file.endsWith('.sql'))
       .sort();
 
-    logger.info(`Found ${migrationFiles.length} migration files: ${migrationFiles.join(', ')}`);
+    logger.info(`Found ${migrationFiles.length} migration files`);
     if (migrationFiles.length === 0) {
-      logger.warn('⚠️ No migration files found!');
+      logger.warn('⚠️  No migration files found!');
     }
 
     for (const file of migrationFiles) {
@@ -87,14 +67,12 @@ async function runMigrations() {
       }
 
       // Read and execute migration
-      const filePath = path.join(actualMigrationsDir, file);
+      const filePath = path.join(migrationsDir, file);
       const sql = fs.readFileSync(filePath, 'utf-8');
 
       logger.info(`🚀 Executing migration: ${migrationName}`);
       
       // Execute all statements in the SQL file
-      // remove all single-line comments first so that semicolons inside them
-      // don’t confuse our naive split.  then split on `;` and trim the results.
       const cleaned = sql.replace(/--.*$/gm, '');
       const statements = cleaned
         .split(';')
@@ -103,16 +81,15 @@ async function runMigrations() {
 
       for (const statement of statements) {
         try {
-          logger.info(`Executing SQL statement: ${statement.slice(0, 240).replace(/\n/g, ' ')}`);
+          logger.info(`Executing SQL: ${statement.slice(0, 100).replace(/\n/g, ' ')}...`);
           await query(statement);
         } catch (err) {
-          logger.error('Error executing statement:', statement.slice(0,240).replace(/\n/g,' '));
+          logger.error('Error executing statement:', statement.slice(0, 100).replace(/\n/g, ' '));
           // Ignore benign errors that may occur when re-applying migrations
           const msg = err instanceof Error ? err.message : String(err);
           const ignorable = [
             'already exists',
             'duplicate column name',
-            'no such column',
             'column already exists'
           ];
 

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
+import Sentry from '../utils/sentry';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -46,14 +47,24 @@ export const errorHandler = (
     }
   });
 
-  // Em produção, enviar para serviço de monitoramento
+  // Em produção, enviar para Sentry
   if (process.env.NODE_ENV === 'production') {
-    // TODO: Integrar com Sentry/DataDog/NewRelic
-    console.error('PRODUCTION ERROR:', {
-      status,
-      message,
-      path: req.path,
-      timestamp: new Date().toISOString()
+    // Capturar exceção no Sentry com contexto adicional
+    Sentry.captureException(err, {
+      tags: {
+        service: 'backend',
+        path: req.path,
+        method: req.method,
+      },
+      extra: {
+        status,
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+      },
+      user: (req as any).user ? {
+        id: (req as any).user.id,
+        email: (req as any).user.email,
+      } : undefined,
     });
   }
 

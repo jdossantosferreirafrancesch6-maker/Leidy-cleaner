@@ -150,7 +150,8 @@ export class TwoFactorService {
       if (isValid) {
         // Registrar tentativa bem-sucedida
         await query(
-          'UPDATE users SET last_2fa_verification = NOW() WHERE id = $1',
+          `UPDATE users SET last_2fa_verification = ${require('../utils/sql').sqlNow()} WHERE id = $1`,
+
           [userId]
         );
 
@@ -249,7 +250,7 @@ export class TwoFactorService {
       const totalResult = await query('SELECT COUNT(*) as count FROM users');
       const enabledResult = await query('SELECT COUNT(*) as count FROM users WHERE two_factor_enabled = true');
       const recentResult = await query(
-        "SELECT COUNT(*) as count FROM users WHERE last_2fa_verification > NOW() - INTERVAL '24 hours'"
+        `SELECT COUNT(*) as count FROM users WHERE last_2fa_verification > ${require('../utils/sql').sqlAgoHours(24)}`
       );
 
       return {

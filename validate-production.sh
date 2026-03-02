@@ -71,6 +71,18 @@ test_check "FINISHED_PROJECT_SUMMARY exists" "[ -f 'FINISHED_PROJECT_SUMMARY.md'
 test_check "API docs in backend" "[ -f 'backend/src/utils/swagger.ts' ]"
 
 echo ""
+echo -e "${BLUE}[6/5] Checking Security & Secrets${NC}"
+# Ensure no default development secrets remain
+# looks for common placeholder strings
+test_check "No placeholder JWT secret" "! grep -R --color=never -nH "change_this" .env* 2>/dev/null"
+test_check "No test Stripe keys" "! grep -R --color=never -nH "sk_test_" .env* 2>/dev/null"
+# npm audit high/critical vulnerabilities (production deps only)
+test_check "Backend npm audit (no high/critical in prod deps)" "cd backend && npm audit --production --json | grep -q '\"high\": 0' && grep -q '\"critical\": 0' || false"
+# SSL certificate files (optional, but recommended).
+# In CI we usually don't have real certs, so allow passing when CI=true.
+test_check "SSL certificate exists" "[ \"$CI\" = true ] || ([ -f 'certs/cert.pem' ] && [ -f 'certs/key.pem' ]) || false"
+
+echo ""
 echo "════════════════════════════════════════════════════════════════"
 echo "  VALIDATION RESULTS"
 echo "════════════════════════════════════════════════════════════════"

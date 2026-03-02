@@ -6,7 +6,7 @@ dotenv.config();
 export const PORT = Number(process.env.PORT) || 3001;
 export const NODE_ENV = process.env.NODE_ENV || 'development';
 export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
-export const DB_TYPE = process.env.DB_TYPE || 'sqlite';
+export const DB_TYPE = process.env.DB_TYPE || 'postgres';
 export const CORS_ALLOWED = [
   'http://localhost:3000',
   'http://localhost:3001',

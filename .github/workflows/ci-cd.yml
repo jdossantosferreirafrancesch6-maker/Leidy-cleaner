@@ -316,7 +316,12 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔐 Create deployment
+      - name: � Validate production configuration
+        run: bash ./validate-production.sh
+        env:
+          CI: true
+
+      - name: �🔐 Create deployment
         uses: actions/github-script@v6
         id: deployment
         with:

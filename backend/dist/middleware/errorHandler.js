@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ApiError = exports.asyncHandler = exports.errorHandler = void 0;
 const logger_1 = require("../utils/logger");
+const sentry_1 = __importDefault(require("../utils/sentry"));
 const errorHandler = (err, req, res, _next) => {
     const status = err.status || 500;
     const message = err.message || 'Internal Server Error';
@@ -27,14 +31,24 @@ const errorHandler = (err, req, res, _next) => {
             }
         }
     });
-    // Em produção, enviar para serviço de monitoramento
+    // Em produção, enviar para Sentry
     if (process.env.NODE_ENV === 'production') {
-        // TODO: Integrar com Sentry/DataDog/NewRelic
-        console.error('PRODUCTION ERROR:', {
-            status,
-            message,
-            path: req.path,
-            timestamp: new Date().toISOString()
+        // Capturar exceção no Sentry com contexto adicional
+        sentry_1.default.captureException(err, {
+            tags: {
+                service: 'backend',
+                path: req.path,
+                method: req.method,
+            },
+            extra: {
+                status,
+                ip: req.ip,
+                userAgent: req.get('User-Agent'),
+            },
+            user: req.user ? {
+                id: req.user.id,
+                email: req.user.email,
+            } : undefined,
         });
     }
     const response = {
