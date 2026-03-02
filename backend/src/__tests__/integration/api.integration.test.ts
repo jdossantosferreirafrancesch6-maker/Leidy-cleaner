@@ -172,6 +172,9 @@ describe('Leidy Cleaner API Integration Tests', () => {
 
       if (userRes.body?.data?.tokens?.accessToken) {
         userToken = userRes.body.data.tokens.accessToken;
+      } else {
+        console.error('User registration/login did not return accessToken:', userRes.status, userRes.body);
+        throw new Error('Failed to obtain user accessToken');
       }
 
       // Use seeded admin account (email: admin@leidycleaner.com, password: admin123456)
@@ -184,6 +187,9 @@ describe('Leidy Cleaner API Integration Tests', () => {
 
       if (adminRes.body?.data?.tokens?.accessToken) {
         adminToken = adminRes.body.data.tokens.accessToken;
+      } else {
+        console.error('Admin login failed or did not return token:', adminRes.status, adminRes.body);
+        throw new Error('Failed to obtain admin accessToken');
       }
     });
 

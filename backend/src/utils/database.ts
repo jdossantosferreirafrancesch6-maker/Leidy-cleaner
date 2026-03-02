@@ -85,7 +85,45 @@ export const query = async (text: string, params?: any[]): Promise<any[]> => {
     // SQLite doesn't understand Postgres-style $1, $2 placeholders when using
     // the `sqlite3` library with an array of values. Convert them to `?`.
     // This allows the same SQL strings written for Postgres to work in tests.
-    let sql = text.replace(/\$\d+/g, '?');
+    //
+    // The earlier approach used a regex replacement, but that could still mangle
+    // literal values inside single quotes (notably bcrypt hashes like
+    // `$2b$10$...` found in the sqlite seed file).  Since placeholders should
+    // never appear inside quoted strings, we adopt a simple manual scanner that
+    // skips over any text inside single quotes when performing the conversion.
+    //
+    // This function walks the SQL string character by character and only
+    // replaces `$<digits>` sequences when they occur outside of quotes.
+    const convertPlaceholders = (input: string) => {
+      let out = '';
+      let inQuote = false;
+      for (let i = 0; i < input.length; i++) {
+        const ch = input[i];
+        if (ch === "'") {
+          out += ch;
+          inQuote = !inQuote;
+        } else if (!inQuote && ch === '$') {
+          // collect following digits
+          let j = i + 1;
+          let digits = '';
+          while (j < input.length && /[0-9]/.test(input[j])) {
+            digits += input[j];
+            j++;
+          }
+          if (digits.length > 0) {
+            out += '?';
+            i = j - 1;
+          } else {
+            out += ch;
+          }
+        } else {
+          out += ch;
+        }
+      }
+      return out;
+    };
+
+    let sql = convertPlaceholders(text);
 
     // debug each sqlite query when running in test/dev to help track odd
     // behaviours such as the mysterious foreign-key failure we observed.
