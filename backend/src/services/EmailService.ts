@@ -365,6 +365,86 @@ export const EmailService = {
       html,
     });
   },
+
+  /**
+   * Email de notificação de reembolso
+   */
+  async sendRefundNotification(email: string, userName: string, bookingId: string, amount: number, serviceName: string) {
+    const html = `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Reembolso Processado com Sucesso! 💰</h2>
+        <p>Olá ${userName},</p>
+        <p>Seu reembolso foi processado com sucesso.</p>
+        
+        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4CAF50;">
+          <p style="margin: 0 0 10px 0;"><strong>Detalhes do Reembolso:</strong></p>
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            <li>📋 <strong>Serviço:</strong> ${serviceName}</li>
+            <li>💵 <strong>Valor:</strong> R$ ${amount.toFixed(2)}</li>
+            <li>🆔 <strong>ID da Reserva:</strong> ${bookingId}</li>
+            <li>📅 <strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</li>
+          </ul>
+        </div>
+
+        <p style="color: #666; border-left: 4px solid #FFF9C4; padding: 15px; background-color: #fffde7; border-radius: 4px;">
+          ⏱️ <strong>Tempo de processamento:</strong> O valor será creditado em sua conta nos próximos 3-5 dias úteis.
+        </p>
+
+        <p>Se tiver alguma dúvida, entre em contato com nosso suporte.</p>
+
+        <hr />
+        <p style="color: #666; font-size: 12px;">
+          © 2026 Leidy Cleaner. Todos os direitos reservados.
+        </p>
+      </div>
+    `;
+
+    return this.send({
+      to: email,
+      subject: '✅ Seu Reembolso foi Processado - Leidy Cleaner',
+      html,
+    });
+  },
+
+  /**
+   * Email de notificação de cancelamento com reembolso
+   */
+  async sendCancellationWithRefundNotification(email: string, userName: string, bookingId: string, serviceName: string, amount: number) {
+    const html = `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Sua Reserva foi Cancelada 🔄</h2>
+        <p>Olá ${userName},</p>
+        <p>Confirmamos o cancelamento de sua reserva e iniciamos o processo de reembolso.</p>
+        
+        <div style="background-color: #f3e5f5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #9C27B0;">
+          <p style="margin: 0 0 10px 0;"><strong>Detalhes do Cancelamento:</strong></p>
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            <li>📋 <strong>Serviço:</strong> ${serviceName}</li>
+            <li>💵 <strong>Reembolso:</strong> R$ ${amount.toFixed(2)}</li>
+            <li>🆔 <strong>ID da Reserva:</strong> ${bookingId}</li>
+            <li>📅 <strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</li>
+          </ul>
+        </div>
+
+        <p style="color: #666; border-left: 4px solid #E0F2F1; padding: 15px; background-color: #e0f2f1; border-radius: 4px;">
+          ⏱️ <strong>Processamento:</strong> O reembolso será creditado em sua conta nos próximos 3-5 dias úteis.
+        </p>
+
+        <p>Se deseja agendar outro serviço, visite nossa plataforma.</p>
+
+        <hr />
+        <p style="color: #666; font-size: 12px;">
+          © 2026 Leidy Cleaner. Todos os direitos reservados.
+        </p>
+      </div>
+    `;
+
+    return this.send({
+      to: email,
+      subject: '🔄 Sua Reserva foi Cancelada e Reembolso Iniciado - Leidy Cleaner',
+      html,
+    });
+  },
 };
 
 export default EmailService;

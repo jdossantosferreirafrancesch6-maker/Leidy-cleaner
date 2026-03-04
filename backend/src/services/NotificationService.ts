@@ -1,3 +1,158 @@
+/**
+ * Compatibility wrapper for NotificationService.
+ * Uses `NotificationServiceImpl` when available and exposes the
+ * instance `notificationService` and some static helpers expected
+ * across the codebase (e.g. `notifyBookingCreated`).
+ */
+import NotificationServiceImpl from './NotificationServiceImpl';
+import { query } from '../utils/database';
+import { logger } from '../utils/logger';
+
+class NotificationServiceWrapper {
+  static async notifyBookingCreated(booking: any) {
+    try {
+      // attempt to notify customer if we can resolve their email
+      const userRows = await query('SELECT email, full_name, phone FROM users WHERE id = $1', [booking.user_id]);
+      const user = userRows && userRows[0];
+
+      if (user && user.email) {
+        await NotificationServiceImpl.sendEmail({
+          toEmail: user.email,
+          subject: 'Agendamento criado - Leidy Cleaner',
+          text: `Olá ${user.full_name || ''}, seu agendamento ${booking.id} foi criado.`
+        });
+      }
+
+      // notify admin as well
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@leidycleaner.com';
+      await NotificationServiceImpl.sendEmail({
+        toEmail: adminEmail,
+        subject: `Novo agendamento: ${booking.id}`,
+        text: `Novo agendamento criado: ${booking.id}`
+      });
+    } catch (err) {
+      logger.error('notifyBookingCreated error:', err);
+    }
+  }
+
+  // static proxies for basic API compatibility
+  static async sendEmail(opts: any) {
+    return NotificationServiceImpl.sendEmail(opts);
+  }
+
+  static async sendSMS(to: string, text: string) {
+    return NotificationServiceImpl.sendSMS(to, text);
+  }
+}
+
+// lightweight instance with methods used by ReminderService
+export const notificationService = {
+  async sendBookingReminder(data: any, hoursUntil: number) {
+    const subject = `Lembrete: seu serviço em ${hoursUntil} horas`;
+    const text = `Lembrete: seu serviço ${data.id} ocorrerá em breve.`;
+    return NotificationServiceImpl.sendEmail({ toEmail: data.customerEmail, subject, text });
+  },
+  async sendReviewRequest(data: any) {
+    const subject = `Avalie nosso serviço - ${data.id}`;
+    const text = `Por favor, avalie o serviço ${data.id}.`; 
+    return NotificationServiceImpl.sendEmail({ toEmail: data.customerEmail, subject, text });
+  },
+  async sendBookingConfirmation(data: any) {
+    const subject = `Confirmação de agendamento - ${data.id}`;
+    const text = `Seu agendamento ${data.id} foi confirmado.`;
+    return NotificationServiceImpl.sendEmail({ toEmail: data.customerEmail, subject, text });
+  },
+  async sendStaffAssignment(data: any) {
+    const subject = `Novo agendamento atribuído - ${data.serviceName}`;
+    const text = `Você foi atribuído ao serviço ${data.serviceName}.`;
+    return NotificationServiceImpl.sendEmail({ toEmail: data.staffEmail, subject, text });
+  },
+  async testConnection() {
+    // NotificationServiceImpl doesn't expose verify; return false unless SMTP configured
+    return !!(process.env.SMTP_HOST && process.env.SMTP_USER);
+  }
+};
+
+export default NotificationServiceWrapper;
+import nodemailer from 'nodemailer';
+import { logger } from '../utils/logger';
+
+type NotifyOptions = {
+  toEmail?: string;
+  toPhone?: string;
+  subject?: string;
+  text?: string;
+  html?: string;
+};
+
+class NotificationService {
+  private static transporter: any | null = null;
+
+  private static getTransporter() {
+    if (this.transporter) return this.transporter;
+
+    if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+      logger.info('NotificationService: SMTP transporter configured');
+    } else {
+      // no SMTP configured; use a fake transporter that logs messages
+      this.transporter = {
+        sendMail: async (opts: any) => {
+          logger.info('NotificationService (log fallback) sendMail', opts);
+          return { accepted: [opts.to], messageId: 'log-fallback' };
+        }
+      };
+      logger.warn('NotificationService: SMTP not configured, using log fallback');
+    }
+
+    return this.transporter;
+  }
+
+  static async sendEmail(opts: NotifyOptions) {
+    if (!opts.toEmail) {
+      logger.warn('NotificationService.sendEmail called without toEmail');
+      return;
+    }
+
+    const transporter = this.getTransporter();
+    try {
+      const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || 'no-reply@leidycleaner.com',
+        to: opts.toEmail,
+        subject: opts.subject || 'Notificação',
+        text: opts.text,
+        html: opts.html
+      });
+      logger.info('NotificationService: email sent', { to: opts.toEmail, messageId: info.messageId });
+      return info;
+    } catch (err) {
+      logger.error('NotificationService: email send failed', err);
+      throw err;
+    }
+  }
+
+  // Simple SMS fallback: this project doesn't have an SMS provider configured
+  // so we log SMS attempts. If a provider is later added, implement here.
+  static async sendSMS(toPhone?: string, message?: string) {
+    if (!toPhone) {
+      logger.warn('NotificationService.sendSMS called without toPhone');
+      return;
+    }
+    // Placeholder - log the SMS
+    logger.info('NotificationService: sendSMS (log)', { to: toPhone, message });
+    return { to: toPhone, status: 'logged' };
+  }
+}
+
+export default NotificationService;
 import nodemailer from 'nodemailer';
 import { logger } from '../utils/logger-advanced';
 

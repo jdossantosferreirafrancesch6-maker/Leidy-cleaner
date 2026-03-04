@@ -5,7 +5,7 @@ import BookingService from '../services/BookingService';
 import { calculateServicePrice } from '../utils/priceCalculator';
 import { camelize } from '../utils/transformers';
 import { ReminderService } from '../services/ReminderService';
-import NotificationService from '../services/NotificationService';
+import NotificationService from '../services/Notifications';
 import { t } from '../utils/i18n';
 
 export class BookingController {

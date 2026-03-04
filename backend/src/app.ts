@@ -87,7 +87,7 @@ setupSwagger(app);
 app.get('/health', async (_req: Request, res: Response) => {
   const { cacheService } = await import('./services/CacheService');
   const { ReminderService } = await import('./services/ReminderService');
-  const { notificationService } = await import('./services/NotificationService');
+  const { notificationService } = await import('./services/Notifications');
 
   const health = {
     status: 'ok',

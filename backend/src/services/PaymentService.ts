@@ -2,6 +2,7 @@ import { query } from '../utils/database';
 import Stripe from 'stripe';
 import { BookingService } from './BookingService';
 import { logger } from '../utils/logger';
+import NotificationService from './NotificationServiceImpl';
 
 export class PaymentService {
   // mark booking as paid/confirmed
@@ -94,6 +95,36 @@ export class PaymentService {
         timestamp: new Date().toISOString()
       });
 
+      // Notify customer and admin about refund
+      try {
+        // fetch user contact info if available
+        const userRes = await query('SELECT email, full_name, phone FROM users WHERE id = $1', [booking.user_id]);
+        const user = (userRes && userRes[0]) || null;
+
+        if (user && user.email) {
+          await NotificationService.sendEmail({
+            toEmail: user.email,
+            subject: 'Reembolso Processado - Leidy Cleaner',
+            text: `Olá ${user.full_name || ''},\n\nSeu reembolso para a reserva ${bookingId} no valor de R$ ${booking.total_price} foi processado com sucesso.\n\nAtenciosamente,\nLeidy Cleaner`,
+          });
+        }
+
+        // notify internal admin address
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@leidycleaner.com';
+        await NotificationService.sendEmail({
+          toEmail: adminEmail,
+          subject: `Refund processed: ${bookingId}`,
+          text: `Refund processed for booking ${bookingId} - amount R$ ${booking.total_price}`
+        });
+
+        // optional SMS notify (logged fallback)
+        if (user && user.phone) {
+          await NotificationService.sendSMS(user.phone, `Seu reembolso de R$ ${booking.total_price} para reserva ${bookingId} foi processado.`);
+        }
+      } catch (notifyErr) {
+        logger.error('Error sending refund notifications:', notifyErr);
+        // don't block refund flow on notification errors
+      }
       // TODO: In production, call Stripe API:
       // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
       // const refund = await stripe.refunds.create({
@@ -115,7 +146,7 @@ export class PaymentService {
   static async getRefundStatus(bookingId: string): Promise<any> {
     try {
       const result = await query(
-        'SELECT id, payment_status FROM bookings WHERE id = $1',
+        'SELECT id, payment_status, stripe_charge_id FROM bookings WHERE id = $1',
         [bookingId]
       );
 
@@ -125,7 +156,8 @@ export class PaymentService {
 
       return {
         bookingId,
-        paymentStatus: result[0].payment_status
+        paymentStatus: result[0].payment_status,
+        stripeChargeId: result[0].stripe_charge_id
       };
     } catch (err) {
       logger.error('Error getting refund status:', err);

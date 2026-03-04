@@ -24,8 +24,8 @@ import staffRoutes from '../../routes/staff';
 import { errorHandler } from '../../middleware/errorHandler';
 
 // notifications are side effects; stub them out so tests can assert calls
-jest.mock('../../services/NotificationService');
-import NotificationService from '../../services/NotificationService';
+jest.mock('../../services/Notifications');
+import NotificationService from '../../services/Notifications';
 const mockedNotify = NotificationService.notifyBookingCreated as jest.MockedFunction<typeof NotificationService.notifyBookingCreated>;
 
 const app = express();

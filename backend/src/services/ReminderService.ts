@@ -1,4 +1,4 @@
-import { notificationService } from './NotificationService';
+import { notificationService } from './Notifications';
 import { query } from '../utils/database';
 import { logger } from '../utils/logger-advanced';
 
