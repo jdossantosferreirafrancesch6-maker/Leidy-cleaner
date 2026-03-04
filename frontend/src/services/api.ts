@@ -526,6 +526,15 @@ class ApiClient {
     }
   }
 
+  async refundBooking(bookingId: string): Promise<{ booking: Booking; stripeRefund?: any }> {
+    try {
+      const response = await this.client.post('/payments/refund', { bookingId });
+      return response.data.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async getStats(): Promise<{ users: number; services: number; bookings: number; pendingReviews?: number }> {
     try {
       const response = await this.client.get('/admin/stats');

@@ -11,16 +11,17 @@ export default function BookingDetail() {
   const id = params?.id as string;
   const [booking, setBooking] = useState<Booking | null>(null);
   const [review, setReview] = useState<Review | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     if (!id) return;
     apiClient.getBookingById(id)
       .then((b) => setBooking(b))
       .catch((err) => setError(err.message || 'Erro ao carregar booking'))
-      .finally(() => setLoading(false));
+      .finally(() => setIsInitialLoad(false));
   }, [id]);
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export default function BookingDetail() {
       });
   }, [id]);
 
-  if (loading) return <p>Carregando...</p>;
+  if (isInitialLoad) return <p>Carregando...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
   if (!booking) return <p>Booking não encontrado.</p>;
@@ -60,13 +61,33 @@ export default function BookingDetail() {
       <p><strong>Status:</strong> {booking.status}</p>
       {booking.paymentStatus && <p><strong>Pagamento:</strong> {booking.paymentStatus}</p>}
       <p><strong>Criado em:</strong> {new Date(booking.createdAt).toLocaleString()}</p>
-      <div className="mt-4 space-x-2">
+      <div className="mt-4 space-x-2 flex flex-wrap gap-2">
         {booking.status === 'pending' && (
           <a href={`/payments?bookingId=${booking.id}`} className="inline-block bg-green-600 text-white px-4 py-2 rounded">
             Pagar agora
           </a>
         )}
-        {(booking.status === 'pending' || booking.status === 'confirmed') && (
+        {booking.paymentStatus === 'paid' && (
+          <button
+            onClick={async () => {
+              try {
+                setLoading(true);
+                const result = await apiClient.refundBooking(booking.id);
+                setBooking(result.booking);
+                setSuccess('Reembolso solicitado com sucesso!');
+              } catch (err: any) {
+                setError(err.message || 'Erro ao solicitar reembolso');
+              } finally {
+                setLoading(false);
+              }
+            }}
+            className="inline-block bg-yellow-600 text-white px-4 py-2 rounded disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? 'Processando...' : 'Solicitar Reembolso'}
+          </button>
+        )}
+        {(booking.status === 'pending' || booking.status === 'confirmed') && booking.paymentStatus !== 'refunded' && (
           <button
             onClick={async () => {
               try {
