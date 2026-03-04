@@ -5,10 +5,13 @@ import { logger } from '../utils/logger';
 
 export class PaymentService {
   // mark booking as paid/confirmed
-  static async markBookingPaid(bookingId: string) {
+  static async markBookingPaid(bookingId: string, stripeChargeId?: string) {
+    // stripeChargeId is optional; if provided, we update the booking record
     const result = await query(
-      `UPDATE bookings SET status = 'confirmed', payment_status = 'paid', updated_at = ${require('../utils/sql').sqlNow()} WHERE id = $1 RETURNING *`, 
-      [bookingId]
+      `UPDATE bookings SET status = 'confirmed', payment_status = 'paid', \
+        stripe_charge_id = COALESCE($2, stripe_charge_id), \
+        updated_at = ${require('../utils/sql').sqlNow()} WHERE id = $1 RETURNING *`,
+      [bookingId, stripeChargeId || null]
     );
     return result.length > 0 ? result[0] : null;
   }
@@ -112,7 +115,7 @@ export class PaymentService {
   static async getRefundStatus(bookingId: string): Promise<any> {
     try {
       const result = await query(
-        'SELECT id, payment_status, stripe_charge_id FROM bookings WHERE id = $1',
+        'SELECT id, payment_status FROM bookings WHERE id = $1',
         [bookingId]
       );
 
@@ -122,11 +125,77 @@ export class PaymentService {
 
       return {
         bookingId,
-        paymentStatus: result[0].payment_status,
-        stripeChargeId: result[0].stripe_charge_id
+        paymentStatus: result[0].payment_status
       };
     } catch (err) {
       logger.error('Error getting refund status:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * Get all refunds (admin view) with optional filtering
+   */
+  static async getAllRefunds(filter?: { status?: string; startDate?: string; endDate?: string }): Promise<any[]> {
+    try {
+      let sql = `
+        SELECT 
+          b.id, b.user_id, b.service_id, b.total_price, b.payment_status, 
+          b.scheduled_date, b.created_at, b.updated_at,
+          s.name as service_name, u.email as user_email, u.full_name as user_name
+        FROM bookings b
+        JOIN services s ON s.id = b.service_id
+        JOIN users u ON u.id = b.user_id
+        WHERE b.payment_status = 'refunded'
+      `;
+      const params: any[] = [];
+
+      // Optional date filtering
+      if (filter?.startDate) {
+        sql += ` AND b.updated_at >= $${params.length + 1}`;
+        params.push(filter.startDate);
+      }
+      if (filter?.endDate) {
+        sql += ` AND b.updated_at <= $${params.length + 1}`;
+        params.push(filter.endDate);
+      }
+
+      sql += ` ORDER BY b.updated_at DESC`;
+
+      const result = await query(sql, params);
+      return result || [];
+    } catch (err) {
+      logger.error('Error fetching refunds:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * Get a specific refund by booking ID (admin view)
+   */
+  static async getRefundById(bookingId: string): Promise<any> {
+    try {
+      const result = await query(
+        `
+        SELECT 
+          b.id, b.user_id, b.service_id, b.total_price, b.payment_status, 
+          b.scheduled_date, b.address, b.notes, b.created_at, b.updated_at,
+          s.name as service_name, u.email as user_email, u.full_name as user_name
+        FROM bookings b
+        JOIN services s ON s.id = b.service_id
+        JOIN users u ON u.id = b.user_id
+        WHERE b.id = $1 AND b.payment_status = 'refunded'
+        `,
+        [bookingId]
+      );
+
+      if (!result || result.length === 0) {
+        throw new Error('Refund not found');
+      }
+
+      return result[0];
+    } catch (err) {
+      logger.error('Error fetching refund:', err);
       throw err;
     }
   }

@@ -138,6 +138,36 @@ export class PaymentController {
     return; // satisfy TS that we always exit the handler
   });
 
+  static refundBooking = asyncHandler(async (req: AuthRequest, res: Response) => {
+    if (!req.user) throw ApiError(t('notAuthenticated'), 401);
+
+    const { bookingId } = req.body;
+    if (!bookingId) throw ApiError(t('bookingIdRequired'), 400);
+
+    const booking = await BookingService.getById(bookingId);
+    if (!booking) throw ApiError(t('bookingNotFound'), 404);
+
+    if (req.user.role !== 'admin' && String(booking.user_id) !== req.user.id) {
+      throw ApiError(t('insufficientPermissions'), 403);
+    }
+
+    // attempt Stripe refund if charge id exists
+    let stripeRefund: any;
+    if (process.env.STRIPE_SECRET_KEY && booking.stripe_charge_id) {
+      try {
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2022-11-15' });
+        stripeRefund = await stripe.refunds.create({ charge: booking.stripe_charge_id });
+      } catch (err) {
+        logger.error('stripe refund error', err);
+      }
+    }
+
+    const updated = await PaymentService.processRefund(bookingId, stripeRefund?.id);
+    if (!updated) throw ApiError(t('failedUpdateBooking'), 500);
+
+    res.status(200).json({ message: t('bookingRefunded'), data: { booking: updated, stripeRefund } });
+  });
+
   static webhook = asyncHandler(async (req: AuthRequest, res: Response) => {
     // Stripe sends a raw body for signature verification; our route may be registered
     // with express.raw() when a webhook secret is set.  If we have a secret and a
@@ -163,9 +193,10 @@ export class PaymentController {
     // Handle Stripe webhook events
     if (event.type === 'checkout.session.completed') {
       const bookingId = event.data?.object?.metadata?.bookingId;
+      const stripeChargeId = event.data?.object?.payment_intent || event.data?.object?.charge;
       if (bookingId) {
         try {
-          const updated = await PaymentService.markBookingPaid(bookingId);
+          const updated = await PaymentService.markBookingPaid(bookingId, stripeChargeId);
           if (!updated) {
             // Booking not found; log but still return 200 to Stripe
             logger.warn(`Webhook: Could not update booking ${bookingId}`);
@@ -178,6 +209,42 @@ export class PaymentController {
     }
 
     res.status(200).json({ received: true });
+  });
+
+  static listRefunds = asyncHandler(async (req: AuthRequest, res: Response) => {
+    // Only admin can access refund list
+    if (!req.user || req.user.role !== 'admin') {
+      throw ApiError(t('insufficientPermissions'), 403);
+    }
+
+    const { startDate, endDate } = req.query;
+    const filter = {
+      startDate: startDate as string | undefined,
+      endDate: endDate as string | undefined
+    };
+
+    const refunds = await PaymentService.getAllRefunds(filter);
+    res.status(200).json({
+      message: t('refundsRetrieved'),
+      data: { refunds, count: refunds.length }
+    });
+  });
+
+  static getRefundDetail = asyncHandler(async (req: AuthRequest, res: Response) => {
+    // Only admin can access refund details
+    if (!req.user || req.user.role !== 'admin') {
+      throw ApiError(t('insufficientPermissions'), 403);
+    }
+
+    const { bookingId } = req.params;
+    const bookingIdStr = Array.isArray(bookingId) ? bookingId[0] : bookingId;
+    if (!bookingIdStr) throw ApiError(t('bookingIdRequired'), 400);
+
+    const refund = await PaymentService.getRefundById(bookingIdStr);
+    res.status(200).json({
+      message: t('refundRetrieved'),
+      data: { refund }
+    });
   });
 }
 

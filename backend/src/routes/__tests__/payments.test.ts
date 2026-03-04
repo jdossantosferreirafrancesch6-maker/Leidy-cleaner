@@ -195,6 +195,192 @@ describe('Payments Routes', () => {
     });
   });
 
+  describe('POST /api/v1/payments/refund', () => {
+    it('should refund booking when authorized', async () => {
+      if (!bookingId) return;
+
+      // first confirm via PIX so status is paid
+      await request(app)
+        .post('/api/v1/payments/pix/confirm')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({ bookingId });
+
+      const response = await request(app)
+        .post('/api/v1/payments/refund')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({ bookingId });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.booking).toHaveProperty('payment_status', 'refunded');
+      expect(response.body.data.booking).toHaveProperty('status', 'cancelled');
+    });
+
+    it('should allow admin to refund any booking', async () => {
+      if (!bookingId) return;
+      // login admin
+      const adminLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'admin@leidycleaner.com', password: 'admin123456' });
+      const adminToken = adminLogin.body.data.tokens.accessToken;
+
+      const response = await request(app)
+        .post('/api/v1/payments/refund')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ bookingId });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.booking.payment_status).toBe('refunded');
+    });
+
+    it('should return 403 when unauthorized user attempts refund', async () => {
+      if (!bookingId) return;
+      const otherEmail = `other+${uniqueSuffix()}@test.com`;
+      const otherRes = await request(app)
+        .post('/api/v1/auth/register')
+        .send({ email: otherEmail, password: 'otherpass', name: 'Other', phone: '11900000000' });
+      const otherToken = otherRes.body.data.tokens.accessToken;
+
+      const response = await request(app)
+        .post('/api/v1/payments/refund')
+        .set('Authorization', `Bearer ${otherToken}`)
+        .send({ bookingId });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('should require bookingId', async () => {
+      const response = await request(app)
+        .post('/api/v1/payments/refund')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({});
+      expect(response.status).toBe(400);
+    });
+
+    it('should return 404 for non-existent booking', async () => {
+      const response = await request(app)
+        .post('/api/v1/payments/refund')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({ bookingId: 'nope' });
+      expect(response.status).toBe(404);
+    });
+  });
+
+  describe('GET /api/v1/payments/admin/refunds', () => {
+    it('should return refunds list for admin', async () => {
+      // Login admin
+      const adminLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'admin@leidycleaner.com', password: 'admin123456' });
+      const adminToken = adminLogin.body.data.tokens.accessToken;
+
+      // First create a refunded booking
+      if (bookingId) {
+        await request(app)
+          .post('/api/v1/payments/pix/confirm')
+          .set('Authorization', `Bearer ${customerToken}`)
+          .send({ bookingId });
+
+        await request(app)
+          .post('/api/v1/payments/refund')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ bookingId });
+      }
+
+      // Now list refunds
+      const response = await request(app)
+        .get('/api/v1/payments/admin/refunds')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveProperty('refunds');
+      expect(Array.isArray(response.body.data.refunds)).toBe(true);
+      expect(response.body.data).toHaveProperty('count');
+    });
+
+    it('should deny access to non-admin users', async () => {
+      const response = await request(app)
+        .get('/api/v1/payments/admin/refunds')
+        .set('Authorization', `Bearer ${customerToken}`);
+
+      expect(response.status).toBe(403);
+    });
+
+    it('should require authentication', async () => {
+      const response = await request(app)
+        .get('/api/v1/payments/admin/refunds');
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should support date range filtering', async () => {
+      const adminLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'admin@leidycleaner.com', password: 'admin123456' });
+      const adminToken = adminLogin.body.data.tokens.accessToken;
+
+      const response = await request(app)
+        .get('/api/v1/payments/admin/refunds')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .query({
+          startDate: '2024-01-01',
+          endDate: '2024-12-31'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveProperty('refunds');
+    });
+  });
+
+  describe('GET /api/v1/payments/admin/refunds/:bookingId', () => {
+    it('should return refund detail for admin', async () => {
+      if (!bookingId) return;
+
+      const adminLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'admin@leidycleaner.com', password: 'admin123456' });
+      const adminToken = adminLogin.body.data.tokens.accessToken;
+
+      // First refund a booking
+      await request(app)
+        .post('/api/v1/payments/pix/confirm')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({ bookingId });
+
+      await request(app)
+        .post('/api/v1/payments/refund')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ bookingId });
+
+      // Now get detail
+      const response = await request(app)
+        .get(`/api/v1/payments/admin/refunds/${bookingId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveProperty('refund');
+      expect(response.body.data.refund).toHaveProperty('booking_id', bookingId);
+    });
+
+    it('should deny access to non-admin users', async () => {
+      if (!bookingId) return;
+
+      const response = await request(app)
+        .get(`/api/v1/payments/admin/refunds/${bookingId}`)
+        .set('Authorization', `Bearer ${customerToken}`);
+
+      expect(response.status).toBe(403);
+    });
+
+    it('should require authentication', async () => {
+      if (!bookingId) return;
+
+      const response = await request(app)
+        .get(`/api/v1/payments/admin/refunds/${bookingId}`);
+
+      expect(response.status).toBe(401);
+    });
+  });
+
   describe('POST /api/v1/payments/webhook', () => {
     it('should return 200 for valid webhook (no signature)', async () => {
       // In test mode without STRIPE_WEBHOOK_SECRET, webhook just accepts the request
