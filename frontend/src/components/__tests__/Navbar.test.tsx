@@ -3,15 +3,21 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import Navbar from '../Navbar';
 import { AuthContext } from '@/contexts/AuthContext';
 import { apiClient } from '@/services/api';
+import I18nProvider from '@/i18n/I18nProvider';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 jest.mock('@/services/api');
 const mockedApi = apiClient as jest.Mocked<typeof apiClient>;
 
 function renderWithAuth(user: any) {
   render(
-    <AuthContext.Provider value={{ isAuthenticated: !!user, user, loading: false, login: jest.fn(), register: jest.fn(), logout: jest.fn(), refresh: jest.fn() }}>
-      <Navbar />
-    </AuthContext.Provider>
+    <I18nProvider>
+      <ThemeProvider>
+        <AuthContext.Provider value={{ isAuthenticated: !!user, user, loading: false, login: jest.fn(), register: jest.fn(), logout: jest.fn(), refresh: jest.fn() }}>
+          <Navbar />
+        </AuthContext.Provider>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }
 
