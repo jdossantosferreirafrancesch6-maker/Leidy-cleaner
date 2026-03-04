@@ -2,42 +2,57 @@ import { Response } from 'express';
 import { AuthRequest, asyncHandler, ApiError } from '../middleware/errorHandler';
 import PaymentService from '../services/PaymentService';
 import BookingService from '../services/BookingService';
+import Stripe from 'stripe';
+import { t } from '../utils/i18n';
+import { logger } from '../utils/logger';
 
 export class PaymentController {
   static payBooking = asyncHandler(async (req: AuthRequest, res: Response) => {
-    if (!req.user) throw ApiError('Not authenticated', 401);
+    if (!req.user) throw ApiError(t('notAuthenticated'), 401);
 
     const { bookingId } = req.body;
-    if (!bookingId) throw ApiError('bookingId is required', 400);
+    if (!bookingId) throw ApiError(t('bookingIdRequired'), 400);
 
     const booking = await BookingService.getById(bookingId);
-    if (!booking) throw ApiError('Booking not found', 404);
+    if (!booking) throw ApiError(t('bookingNotFound'), 404);
 
-    if (req.user.role !== 'admin' && req.user.role !== 'staff' && String(booking.user_id) !== req.user.id) {
-      throw ApiError('Insufficient permissions', 403);
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'staff' &&
+      String(booking.user_id) !== req.user.id
+    ) {
+      throw ApiError(t('insufficientPermissions'), 403);
     }
 
     const updated = await PaymentService.markBookingPaid(bookingId);
-    if (!updated) throw ApiError('Failed to update booking', 500);
+    if (!updated) throw ApiError(t('failedUpdateBooking'), 500);
 
-    res.status(200).json({ message: 'Booking paid', data: { booking: updated } });
+    res.status(200).json({ message: t('bookingPaid'), data: { booking: updated } });
   });
 
   static pixPayment = asyncHandler(async (req: AuthRequest, res: Response) => {
-    if (!req.user) throw ApiError('Not authenticated', 401);
+    if (!req.user) throw ApiError(t('notAuthenticated'), 401);
 
     const { bookingId } = req.body;
-    if (!bookingId) throw ApiError('bookingId is required', 400);
+    if (!bookingId) throw ApiError(t('bookingIdRequired'), 400);
 
     const booking = await BookingService.getById(bookingId);
-    if (!booking) throw ApiError('Booking not found', 404);
+    if (!booking) throw ApiError(t('bookingNotFound'), 404);
 
-    if (req.user.role !== 'admin' && req.user.role !== 'staff' && req.user.role !== 'customer') {
-      throw ApiError('Only customers and staff can make payments', 403);
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'staff' &&
+      req.user.role !== 'customer'
+    ) {
+      throw ApiError(t('onlyCustomersStaffCanMakePayments'), 403);
     }
 
-    if (req.user.role !== 'admin' && req.user.role !== 'staff' && String(booking.user_id) !== req.user.id) {
-      throw ApiError('Insufficient permissions', 403);
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'staff' &&
+      String(booking.user_id) !== req.user.id
+    ) {
+      throw ApiError(t('insufficientPermissions'), 403);
     }
 
     const pixData = {
@@ -48,69 +63,116 @@ export class PaymentController {
     };
 
     res.status(200).json({
-      message: 'PIX payment data generated',
+      message: t('pixPaymentDataGenerated'),
       data: pixData
     });
   });
 
   static confirmPixPayment = asyncHandler(async (req: AuthRequest, res: Response) => {
-    if (!req.user) throw ApiError('Not authenticated', 401);
+    if (!req.user) throw ApiError(t('notAuthenticated'), 401);
 
     const { bookingId } = req.body;
-    if (!bookingId) throw ApiError('bookingId is required', 400);
+    if (!bookingId) throw ApiError(t('bookingIdRequired'), 400);
 
     const booking = await BookingService.getById(bookingId);
-    if (!booking) throw ApiError('Booking not found', 404);
+    if (!booking) throw ApiError(t('bookingNotFound'), 404);
 
-    if (req.user.role !== 'admin' && req.user.role !== 'staff' && String(booking.user_id) !== req.user.id) {
-      throw ApiError('Insufficient permissions', 403);
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'staff' &&
+      String(booking.user_id) !== req.user.id
+    ) {
+      throw ApiError(t('insufficientPermissions'), 403);
     }
 
     if (booking.status === 'confirmed') {
-      throw ApiError('Booking already paid', 400);
+      throw ApiError(t('bookingAlreadyPaid'), 400);
     }
 
     const updated = await PaymentService.markBookingPaid(bookingId);
-    if (!updated) throw ApiError('Failed to update booking', 500);
+    if (!updated) throw ApiError(t('failedUpdateBooking'), 500);
 
-    res.status(200).json({ message: 'PIX payment confirmed', data: { booking: updated } });
+    res.status(200).json({ message: t('pixPaymentConfirmed'), data: { booking: updated } });
   });
 
   static checkout = asyncHandler(async (req: AuthRequest, res: Response) => {
-    if (!req.user) throw ApiError('Not authenticated', 401);
+    if (!req.user) throw ApiError(t('notAuthenticated'), 401);
 
     const { bookingId } = req.body;
-    if (!bookingId) throw ApiError('bookingId is required', 400);
+    if (!bookingId) throw ApiError(t('bookingIdRequired'), 400);
 
     const booking = await BookingService.getById(bookingId);
-    if (!booking) throw ApiError('Booking not found', 404);
+    if (!booking) throw ApiError(t('bookingNotFound'), 404);
 
-    if (req.user.role !== 'admin' && req.user.role !== 'staff' && String(booking.user_id) !== req.user.id) {
-      throw ApiError('Insufficient permissions', 403);
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'staff' &&
+      String(booking.user_id) !== req.user.id
+    ) {
+      throw ApiError(t('insufficientPermissions'), 403);
     }
 
-    // When Stripe is not configured, fallback to direct payment
+    // if stripe is configured, create a checkout session
+    if (process.env.STRIPE_SECRET_KEY) {
+      const origin = req.headers.origin || '';
+      try {
+        const url = await PaymentService.createStripeSession(bookingId, origin as string);
+        return res.status(200).json({
+          message: t('stripeSessionCreated'),
+          data: { url }
+        });
+      } catch (err) {
+        // fall back to instant payment on failure
+        logger.error('stripe checkout error', err);
+      }
+    }
+
+    // fallback when stripe not configured or session failed
     const updated = await PaymentService.markBookingPaid(bookingId);
-    if (!updated) throw ApiError('Failed to update booking', 500);
+    if (!updated) throw ApiError(t('failedUpdateBooking'), 500);
 
     res.status(200).json({
-      message: 'Payment processed (fallback mode)',
+      message: t('paymentProcessedFallback'),
       data: { booking: updated }
     });
+    return; // satisfy TS that we always exit the handler
   });
 
   static webhook = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const event = req.body;
+    // Stripe sends a raw body for signature verification; our route may be registered
+    // with express.raw() when a webhook secret is set.  If we have a secret and a
+    // signature header we attempt to validate, otherwise we fall back to the parsed
+    // body (tests and fallback mode use json parser).
+    let event: any = req.body;
+    const sig = req.headers['stripe-signature'] as string | undefined;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (webhookSecret && sig) {
+      try {
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2022-11-15' });
+        // req.body may be a Buffer when raw parser used
+        const rawBody = req.body as Buffer;
+        event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+      } catch (err: any) {
+        logger.error('Webhook signature verification failed:', err.message || err);
+        res.status(400).send(`Webhook Error: ${err.message}`);
+        return;
+      }
+    }
 
     // Handle Stripe webhook events
     if (event.type === 'checkout.session.completed') {
       const bookingId = event.data?.object?.metadata?.bookingId;
       if (bookingId) {
-        const updated = await PaymentService.markBookingPaid(bookingId);
-        if (!updated) {
-          console.error('Failed to update booking payment status');
-          res.status(500).json({ error: 'Failed to process payment' });
-          return;
+        try {
+          const updated = await PaymentService.markBookingPaid(bookingId);
+          if (!updated) {
+            // Booking not found; log but still return 200 to Stripe
+            logger.warn(`Webhook: Could not update booking ${bookingId}`);
+          }
+        } catch (err) {
+          // Log error but don't fail the webhook response
+          logger.error('Error processing webhook event:', err);
         }
       }
     }
@@ -119,4 +181,4 @@ export class PaymentController {
   });
 }
 
-export default PaymentController;
+export default PaymentController

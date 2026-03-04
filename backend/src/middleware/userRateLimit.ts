@@ -1,5 +1,6 @@
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { Request } from 'express';
+import { t } from '../utils/i18n';
 
 const config = require('../config');
 
@@ -55,7 +56,7 @@ export const userRateLimit = rateLimit({
     return 50;
   },
   windowMs: 15 * 60 * 1000, // 15 minutos
-  message: 'Too many requests from this user, please try again later.',
+  message: t('tooManyRequestsUser'),
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => {
@@ -71,7 +72,7 @@ export const userRateLimit = rateLimit({
     
     res.status(429).json({
       error: {
-        message: 'Too many requests',
+        message: t('tooManyRequests'),
         status: 429,
         retryAfter,
       }
@@ -98,7 +99,7 @@ export const authRateLimit = rateLimit({
   },
   max: 5, // Muito restritivo para auth
   windowMs: 15 * 60 * 1000, // 15 minutos
-  message: 'Too many login attempts, please try again later.',
+  message: t('tooManyLoginAttempts'),
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => config.NODE_ENV === 'test',
@@ -110,7 +111,7 @@ export const authRateLimit = rateLimit({
     
     res.status(429).json({
       error: {
-        message: 'Too many authentication attempts',
+        message: t('tooManyAuthAttempts'),
         status: 429,
         retryAfter,
       }
@@ -119,3 +120,4 @@ export const authRateLimit = rateLimit({
   // Store adaptável: Redis em prod, MemoryStore em dev
   store: getStore() as any,
 });
+

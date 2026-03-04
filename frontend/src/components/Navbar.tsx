@@ -6,9 +6,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import React from 'react';
 import { apiClient } from '@/services/api';
+import { useTranslation } from 'react-i18next';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import ThemeToggle from './ThemeToggle';
+import LanguageSwitcher from './LanguageSwitcher';
 import {
   Menu,
   X,
@@ -31,6 +33,7 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [company, setCompany] = useState<{name: string; logoUrl: string} | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     apiClient.getCompanyInfo().then(setCompany).catch(() => {});
@@ -44,26 +47,26 @@ export default function Navbar() {
   };
 
   const navItems = [
-    { href: '/', label: 'Home', icon: Home },
-    { href: '/services', label: 'Serviços', icon: Briefcase },
-    { href: '/staff-directory', label: 'Equipe', icon: Users },
-    { href: '/gallery', label: 'Galeria', icon: Star },
+    { href: '/', label: 'nav.home', icon: Home },
+    { href: '/services', label: 'nav.services', icon: Briefcase },
+    { href: '/staff-directory', label: 'nav.about', icon: Users },
+    { href: '/gallery', label: 'nav.gallery', icon: Star },
   ];
 
   const authenticatedNavItems = [
-    { href: '/bookings', label: 'Agendamentos', icon: Calendar },
-    { href: '/favorites', label: 'Favoritos', icon: Star },
-    { href: '/personalization', label: 'Personalizar', icon: Settings },
+    { href: '/bookings', label: 'navItems.bookings', icon: Calendar },
+    { href: '/favorites', label: 'navItems.favorites', icon: Star },
+    { href: '/personalization', label: 'navItems.personalization', icon: Settings },
   ];
 
   const adminNavItems = [
-    { href: '/admin', label: 'Administração', icon: Settings },
-    { href: '/admin/bookings', label: 'Gerenciar Agendamentos', icon: Calendar },
-    { href: '/admin/reviews', label: 'Avaliações', icon: Star },
+    { href: '/admin', label: 'admin.title', icon: Settings },
+    { href: '/admin/bookings', label: 'admin.manageBookings', icon: Calendar },
+    { href: '/admin/reviews', label: 'admin.reviews', icon: Star },
   ];
 
   const staffNavItems = [
-    { href: '/staff/bookings', label: 'Minhas Tarefas', icon: Calendar },
+    { href: '/staff/bookings', label: 'navItems.tasks', icon: Calendar },
   ];
 
   return (
@@ -92,7 +95,7 @@ export default function Navbar() {
               <Link key={item.href} href={item.href}>
                 <Button variant="ghost" size="sm" className="flex items-center gap-2">
                   <item.icon className="w-4 h-4" />
-                  {item.label}
+                  {t(item.label)}
                 </Button>
               </Link>
             ))}
@@ -103,7 +106,7 @@ export default function Navbar() {
                   <Link key={item.href} href={item.href}>
                     <Button variant="ghost" size="sm" className="flex items-center gap-2">
                       <item.icon className="w-4 h-4" />
-                      {item.label}
+                      {t(item.label)}
                     </Button>
                   </Link>
                 ))}
@@ -122,14 +125,14 @@ export default function Navbar() {
                     </Button>
                     {dropdownOpen && (
                       <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                        {adminNavItems.map((item) => (
-                          <Link key={item.href} href={item.href}>
-                            <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
-                              <item.icon className="w-4 h-4 text-gray-500" />
-                              <span className="text-sm text-gray-700">{item.label}</span>
-                            </div>
-                          </Link>
-                        ))}
+                          {adminNavItems.map((item) => (
+                            <Link key={item.href} href={item.href}>
+                              <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                                <item.icon className="w-4 h-4 text-gray-500" />
+                                <span className="text-sm text-gray-700">{t(item.label)}</span>
+                              </div>
+                            </Link>
+                          ))}
                       </div>
                     )}
                   </div>
@@ -141,7 +144,7 @@ export default function Navbar() {
                       <Link key={item.href} href={item.href}>
                         <Button variant="ghost" size="sm" className="flex items-center gap-2">
                           <item.icon className="w-4 h-4" />
-                          {item.label}
+                          {t(item.label)}
                         </Button>
                       </Link>
                     ))}
@@ -162,8 +165,8 @@ export default function Navbar() {
                     <span className="hidden lg:block text-sm font-medium">
                       {user?.name || user?.email}
                     </span>
-                    <Badge variant="secondary" className="hidden xl:block text-xs">
-                      {user?.role === 'admin' ? 'Admin' : user?.role === 'staff' ? 'Equipe' : 'Cliente'}
+                      <Badge variant="secondary" className="hidden xl:block text-xs">
+                      {user?.role === 'admin' ? t('roles.admin') : user?.role === 'staff' ? t('roles.staff') : t('roles.customer')}
                     </Badge>
                     <ChevronDown className="w-4 h-4" />
                   </Button>
@@ -174,23 +177,23 @@ export default function Navbar() {
                         <p className="text-sm font-medium text-gray-900">{user?.name}</p>
                         <p className="text-xs text-gray-500">{user?.email}</p>
                         <Badge variant="outline" className="mt-1 text-xs">
-                          {user?.role === 'admin' ? 'Administrador' : user?.role === 'staff' ? 'Profissional' : 'Cliente'}
+                          {user?.role === 'admin' ? t('roles.admin') : user?.role === 'staff' ? t('roles.staff') : t('roles.customer')}
                         </Badge>
                       </div>
 
                       <Link href="/profile">
                         <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
                           <User className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm text-gray-700">Perfil</span>
+                          <span className="text-sm text-gray-700">{t('profile')}</span>
                         </div>
                       </Link>
 
-                      <button
+                        <button
                         onClick={handleLogout}
                         className="flex items-center gap-3 w-full px-4 py-3 hover:bg-gray-50 transition-colors text-red-600"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span className="text-sm">Sair</span>
+                        <span className="text-sm">{t('nav.logout')}</span>
                       </button>
                     </div>
                   )}
@@ -200,15 +203,16 @@ export default function Navbar() {
 
             {!isAuthenticated && (
               <div className="flex items-center gap-2 ml-4">
+                <LanguageSwitcher />
                 <ThemeToggle />
                 <Link href="/auth/login">
                   <Button variant="ghost" size="sm">
-                    Entrar
+                    {t('nav.login')}
                   </Button>
                 </Link>
                 <Link href="/auth/register">
                   <Button size="sm">
-                    Cadastrar
+                    {t('buttons.register') || 'Cadastrar'}
                   </Button>
                 </Link>
               </div>

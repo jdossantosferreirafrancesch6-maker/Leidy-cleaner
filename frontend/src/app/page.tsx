@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiClient, Service } from '../services/api';
 import ServiceCard from '@/components/ServiceCard';
 import ServiceFilter from '@/components/ServiceFilter';
@@ -16,6 +17,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [filterOpts, setFilterOpts] = useState<{ category?: string; search?: string }>({});
   const [reviewStats, setReviewStats] = useState<Record<string, { avg: number; count: number }>>({});
+  const { t } = useTranslation();
 
   const load = async (opts: { category?: string; search?: string } = {}) => {
     setLoading(true);
@@ -53,23 +55,23 @@ export default function HomePage() {
   const features = [
     {
       icon: Shield,
-      title: "100% Seguro",
-      description: "Profissionais verificados e pagamentos protegidos"
+      title: t('home.features.feature1.title'),
+      description: t('home.features.feature1.description')
     },
     {
       icon: Clock,
-      title: "Agendamento Rápido",
-      description: "Marque seu horário em poucos cliques"
+      title: t('home.features.feature2.title'),
+      description: t('home.features.feature2.description')
     },
     {
       icon: Star,
-      title: "Qualidade Garantida",
-      description: "Avaliações reais de clientes satisfeitos"
+      title: t('home.features.feature3.title'),
+      description: t('home.features.feature3.description')
     },
     {
       icon: Users,
-      title: "Equipe Especializada",
-      description: "Profissionais treinados e experientes"
+      title: t('home.features.feature4.title'),
+      description: t('home.features.feature4.description')
     }
   ];
 
@@ -83,27 +85,27 @@ export default function HomePage() {
             <div className="space-y-4">
               <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
                 <Sparkles className="w-4 h-4 mr-2" />
-                Serviço Premium de Limpeza
+                {t('home.hero.badge')}
               </Badge>
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                Limpeza Profissional que
-                <span className="block text-accent-foreground">Você Merece</span>
+                {t('home.hero.title')}
+                <span className="block text-accent-foreground">{t('home.hero.titleBold')}</span>
               </h1>
               <p className="text-xl lg:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-                Serviços de limpeza para residências e empresas. Rápido, confiável e com qualidade garantida!
+                {t('home.hero.subtitle')}
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link href="/services">
                 <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90 shadow-lg">
-                  Ver Serviços
+                  {t('home.hero.cta1')}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
               <Link href="/auth/register">
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
-                  Começar Agora
+                  {t('home.hero.cta2')}
                 </Button>
               </Link>
             </div>
@@ -120,10 +122,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Por que escolher a Leidy Cleaner?
+              {t('home.features.title')}
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Descubra os benefícios de contratar nossos serviços profissionais
+              {t('home.features.subtitle')}
             </p>
           </div>
 
@@ -159,10 +161,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Nossos Serviços
+              {t('services.title')}
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Escolha o serviço ideal e agende com facilidade
+              {t('services.subtitle')}
             </p>
           </div>
 
@@ -190,7 +192,7 @@ export default function HomePage() {
               <div className="text-center">
                 <Link href="/services">
                   <Button variant="outline" size="lg" className="hover:bg-primary hover:text-white transition-colors">
-                    Ver Todos os Serviços
+                    {t('buttons.viewMore')}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
@@ -206,7 +208,7 @@ export default function HomePage() {
           <div className="max-w-3xl mx-auto space-y-8">
             <div className="space-y-4">
               <h2 className="text-3xl lg:text-4xl font-bold">
-                Pronto para uma limpeza profissional?
+                {t('buttons.start')}
               </h2>
               <p className="text-xl text-white/90">
                 Agende seu serviço hoje mesmo e tenha uma experiência excepcional

@@ -3,6 +3,7 @@ import { AuthRequest, asyncHandler, ApiError } from '../middleware/errorHandler'
 import { ChatService } from '../services/ChatService';
 import { chatMessageSchema } from '../utils/schemas';
 import { camelize } from '../utils/transformers';
+import { t } from '../utils/i18n';
 
 export class ChatController {
   /**
@@ -16,26 +17,28 @@ export class ChatController {
     const booking = await BookingService.getById(bookingId);
 
     if (!booking) {
-      throw ApiError('Booking not found', 404);
+      throw ApiError(t('bookingNotFound'), 404);
     }
 
     // Verificar permissões
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    if (userRole !== 'admin' &&
-        booking.user_id !== userId &&
-        booking.team_member_id !== userId) {
-      throw ApiError('Not authorized to access this chat', 403);
+    if (
+      userRole !== 'admin' &&
+      booking.user_id !== userId &&
+      booking.team_member_id !== userId
+    ) {
+      throw ApiError(t('notAuthorizedToAccessChat'), 403);
     }
 
     const room = await ChatService.getOrCreateChatRoom(bookingId);
     if (!room) {
-      throw ApiError('Failed to create chat room', 500);
+      throw ApiError(t('failedCreateChatRoom'), 500);
     }
 
     res.status(200).json({
-      message: 'Chat room retrieved',
+      message: t('chatRoomRetrieved'),
       data: { room: camelize(room) }
     });
   });
@@ -56,17 +59,19 @@ export class ChatController {
     const booking = await BookingService.getById(bookingId);
 
     if (!booking) {
-      throw ApiError('Booking not found', 404);
+      throw ApiError(t('bookingNotFound'), 404);
     }
 
     // Verificar permissões
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    if (userRole !== 'admin' &&
-        booking.user_id !== userId &&
-        booking.team_member_id !== userId) {
-      throw ApiError('Not authorized to send messages in this chat', 403);
+    if (
+      userRole !== 'admin' &&
+      booking.user_id !== userId &&
+      booking.team_member_id !== userId
+    ) {
+      throw ApiError(t('notAuthorizedToSendMessages'), 403);
     }
 
     // Determinar o role do sender
@@ -87,11 +92,11 @@ export class ChatController {
     );
 
     if (!savedMessage) {
-      throw ApiError('Failed to save message', 500);
+      throw ApiError(t('failedSaveMessage'), 500);
     }
 
     res.status(201).json({
-      message: 'Message sent',
+      message: t('messageSent'),
       data: { message: camelize(savedMessage) }
     });
   });
@@ -108,17 +113,19 @@ export class ChatController {
     const booking = await BookingService.getById(bookingId);
 
     if (!booking) {
-      throw ApiError('Booking not found', 404);
+      throw ApiError(t('bookingNotFound'), 404);
     }
 
     // Verificar permissões
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    if (userRole !== 'admin' &&
-        booking.user_id !== userId &&
-        booking.team_member_id !== userId) {
-      throw ApiError('Not authorized to view this chat', 403);
+    if (
+      userRole !== 'admin' &&
+      booking.user_id !== userId &&
+      booking.team_member_id !== userId
+    ) {
+      throw ApiError(t('notAuthorizedToViewChat'), 403);
     }
 
     const messages = await ChatService.getMessages(
@@ -128,7 +135,7 @@ export class ChatController {
     );
 
     res.status(200).json({
-      message: 'Messages retrieved',
+      message: t('messagesRetrieved'),
       data: { messages: camelize(messages) }
     });
   });
@@ -144,23 +151,25 @@ export class ChatController {
     const booking = await BookingService.getById(bookingId);
 
     if (!booking) {
-      throw ApiError('Booking not found', 404);
+      throw ApiError(t('bookingNotFound'), 404);
     }
 
     // Verificar permissões
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    if (userRole !== 'admin' &&
-        booking.user_id !== userId &&
-        booking.team_member_id !== userId) {
-      throw ApiError('Not authorized to mark messages as read', 403);
+    if (
+      userRole !== 'admin' &&
+      booking.user_id !== userId &&
+      booking.team_member_id !== userId
+    ) {
+      throw ApiError(t('notAuthorizedToMarkMessagesRead'), 403);
     }
 
     await ChatService.markAsRead(bookingId, userId);
 
     res.status(200).json({
-      message: 'Messages marked as read'
+      message: t('messagesMarkedRead')
     });
   });
 
@@ -174,7 +183,7 @@ export class ChatController {
     const rooms = await ChatService.getUserChatRooms(userId, userRole);
 
     res.status(200).json({
-      message: 'Chat rooms retrieved',
+      message: t('chatRoomsRetrieved'),
       data: { rooms: camelize(rooms) }
     });
   });
@@ -184,14 +193,16 @@ export class ChatController {
    */
   static getStats = asyncHandler(async (req: AuthRequest, res: Response) => {
     if (req.user!.role !== 'admin') {
-      throw ApiError('Only admins can view chat stats', 403);
+      throw ApiError(t('onlyAdminsViewChatStats'), 403);
     }
 
     const stats = await ChatService.getStats();
 
     res.status(200).json({
-      message: 'Chat stats retrieved',
+      message: t('chatStatsRetrieved'),
       data: { stats }
     });
   });
 }
+
+export default ChatController

@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { JWTPayload } from '../types/auth';
 import { logger } from './logger';
 import { ApiError } from '../middleware/errorHandler';
+import { t } from './i18n';
 
 const JWT_SECRET = (process.env.JWT_SECRET || 'dev_secret_key') as string;
 const JWT_REFRESH_SECRET = (process.env.JWT_REFRESH_SECRET || 'dev_refresh_secret') as string;
@@ -21,7 +22,7 @@ export const generateTokens = (payload: JWTPayload) => {
     return { accessToken, refreshToken };
   } catch (error) {
     logger.error('Error generating tokens:', error);
-    throw new Error('Failed to generate tokens');
+    throw new Error(t('failedGenerateTokens'));
   }
 };
 
@@ -30,7 +31,7 @@ export const verifyToken = (token: string): JWTPayload => {
     return jwt.verify(token, JWT_SECRET) as JWTPayload;
   } catch (error) {
     logger.error('Token verification failed:', error);
-    throw ApiError('Invalid token', 401);
+    throw ApiError(t('invalidToken'), 401);
   }
 };
 
@@ -39,7 +40,7 @@ export const verifyRefreshToken = (token: string): JWTPayload => {
     return jwt.verify(token, JWT_REFRESH_SECRET) as JWTPayload;
   } catch (error) {
     logger.error('Refresh token verification failed:', error);
-    throw ApiError('Invalid refresh token', 401);
+    throw ApiError(t('invalidRefreshToken'), 401);
   }
 };
 

@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest, asyncHandler, ApiError } from '../middleware/errorHandler';
 import { AuthService } from '../services/AuthService';
 import { registerSchema, loginSchema } from '../utils/schemas';
+import { t } from '../utils/i18n';
 
 export class AuthController {
   static register = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -28,7 +29,7 @@ export class AuthController {
     res.cookie('refreshToken', result.refreshToken, cookieOptionsReg);
 
     res.status(201).json({
-      message: 'User registered successfully',
+      message: t('userRegistered'),
       data: {
         user: result.user,
         tokens: {
@@ -62,7 +63,7 @@ export class AuthController {
     res.cookie('refreshToken', result.refreshToken, cookieOptionsLogin);
 
     res.status(200).json({
-      message: 'User logged in successfully',
+      message: t('userLoggedIn'),
       data: {
         user: result.user,
         tokens: {
@@ -78,7 +79,7 @@ export class AuthController {
     const refreshToken = (req.body && (req.body as any).refreshToken) || (req.cookies && (req.cookies as any).refreshToken);
 
     if (!refreshToken) {
-      throw ApiError('Refresh token required', 400);
+      throw ApiError(t('refreshTokenRequired'), 400);
     }
 
     const tokens = await AuthService.refreshToken(refreshToken);
@@ -95,7 +96,7 @@ export class AuthController {
     res.cookie('refreshToken', tokens.refreshToken, cookieOptionsRefresh);
 
     res.status(200).json({
-      message: 'Token refreshed successfully',
+      message: t('tokenRefreshed'),
       data: { tokens },
     });
   });
@@ -123,18 +124,18 @@ export class AuthController {
     };
     res.clearCookie('refreshToken', cookieOptionsLogout);
 
-    res.status(200).json({ message: 'Logged out' });
+    res.status(200).json({ message: t('loggedOut') });
   });
 
   static getProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!req.user) {
-      throw ApiError('Not authenticated', 401);
+      throw ApiError(t('notAuthenticated'), 401);
     }
 
     const user = await AuthService.getUserById(req.user.id);
 
     if (!user) {
-      throw ApiError('User not found', 404);
+      throw ApiError(t('userNotFound'), 404);
     }
 
     // Map full_name to name for response
@@ -145,14 +146,14 @@ export class AuthController {
     delete (userResponse as any).full_name;
 
     res.status(200).json({
-      message: 'User profile retrieved',
+      message: t('userProfileRetrieved'),
       data: { user: userResponse },
     });
   });
 
   static updateProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!req.user) {
-      throw ApiError('Not authenticated', 401);
+      throw ApiError(t('notAuthenticated'), 401);
     }
 
     const { name, phone } = req.body;
@@ -160,7 +161,7 @@ export class AuthController {
     const user = await AuthService.updateUser(req.user.id, { name, phone });
 
     if (!user) {
-      throw ApiError('User not found', 404);
+      throw ApiError(t('userNotFound'), 404);
     }
 
     // Map full_name to name for response
@@ -171,7 +172,7 @@ export class AuthController {
     delete (userResponse as any).full_name;
 
     res.status(200).json({
-      message: 'User profile updated',
+      message: t('userProfileUpdated'),
       data: { user: userResponse },
     });
   });
@@ -179,13 +180,13 @@ export class AuthController {
   // admin helper: list users by role (e.g. staff)
   static listByRole = asyncHandler(async (req: AuthRequest, res: Response) => {
     if (req.user?.role !== 'admin') {
-      throw ApiError('Only admins can list users', 403);
+      throw ApiError(t('onlyAdminsListUsers'), 403);
     }
     const role = (req.query.role as string) || '';
     if (!role) {
-      throw ApiError('Role query parameter required', 400);
+      throw ApiError(t('roleQueryRequired'), 400);
     }
     const users = await AuthService.getUsersByRole(role);
-    res.status(200).json({ message: 'Users retrieved', data: { users } });
+    res.status(200).json({ message: t('usersRetrieved'), data: { users } });
   });
 }

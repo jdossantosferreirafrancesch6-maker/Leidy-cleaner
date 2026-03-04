@@ -261,6 +261,12 @@ describe('Leidy Cleaner API Integration Tests', () => {
         .set('Authorization', `Bearer ${userToken}`)
         .send({ serviceId: srvId, bookingDate: new Date().toISOString(), address: 'Rua X' });
       const bid = bookRes.body.data.booking.id;
+      // the notification is dispatched asynchronously (setImmediate), so give the
+      // event loop a couple ticks before asserting. without this the mock may still show
+      // zero calls, especially since the callback itself is async.
+      await new Promise((r) => setImmediate(r));
+      // additional small delay for async tasks inside the callback to complete
+      await new Promise((r) => setTimeout(r, 5));
       expect(mockedNotify).toHaveBeenCalledWith(expect.objectContaining({ id: bid }));
 
       const payRes = await request(app)
@@ -288,7 +294,12 @@ describe('Leidy Cleaner API Integration Tests', () => {
         .send({ bookingId: bid });
 
       expect(res.status).toBe(200);
-      expect(res.body.data.booking.status).toBe('confirmed');
+      // Stripe may return { url } if configured, or fallback returns { booking }
+      if (res.body.data.booking) {
+        expect(res.body.data.booking.status).toBe('confirmed');
+      } else {
+        expect(res.body.data.url).toBeDefined();
+      }
     });
 
     test('Webhook can mark booking paid', async () => {
@@ -588,14 +599,14 @@ describe('Leidy Cleaner API Integration Tests', () => {
           .get('/api/v1/staff');
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body.data.staff)).toBe(true);
-        expect(res.body.data.staff.some((u: any) => u.id === staffId)).toBe(true);
+        expect(res.body.data.staff.some((u: any) => String(u.id) === staffId)).toBe(true);
       });
 
       test('Get specific staff by id', async () => {
         const res = await request(app)
           .get(`/api/v1/staff/${staffId}`);
         expect(res.status).toBe(200);
-        expect(res.body.data.staff.id).toBe(staffId);
+        expect(String(res.body.data.staff.id)).toBe(staffId);
       });
 
       test('Staff can update own profile', async () => {

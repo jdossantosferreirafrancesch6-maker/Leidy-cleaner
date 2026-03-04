@@ -449,7 +449,7 @@ export class NotificationService {
     try {
       // Buscar dados do usuário
       const { query } = await import('../utils/database');
-      const users = await query('SELECT email, name FROM users WHERE id = $1', [booking.user_id]);
+      const users = await query('SELECT email, full_name AS name FROM users WHERE id = $1', [booking.user_id]);
 
       if (users.length > 0) {
         const user = users[0];
@@ -469,7 +469,7 @@ export class NotificationService {
 
       // Notificar staff se atribuído
       if (booking.staff_id) {
-        const staffRows = await query('SELECT email, name FROM users WHERE id = $1', [booking.staff_id]);
+        const staffRows = await query('SELECT email, full_name AS name FROM users WHERE id = $1', [booking.staff_id]);
         if (staffRows.length > 0) {
           const staff = staffRows[0];
           const staffData: StaffAssignmentData = {

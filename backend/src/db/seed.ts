@@ -55,6 +55,19 @@ async function seedDatabase() {
         );
         logger.info('✨ Admin user created: admin@leidycleaner.com');
       } else {
+        // when running tests, always ensure the seeded admin password matches
+        // the test password.  This is important because the SQLite migration
+        // seed file includes a hard-coded hash that may not correspond to the
+        // current default.  Without this update the login attempts would fail
+        // with "Invalid email or password" as seen in our integration tests.
+        if (require('../config').NODE_ENV === 'test') {
+          const adminPassword = await hashPassword(process.env.ADMIN_PASSWORD || 'admin123456');
+          await testQuery(
+            `UPDATE users SET password_hash = $1 WHERE email = $2`,
+            [adminPassword, 'admin@leidycleaner.com']
+          );
+          logger.info('🔄 Admin password reset for test environment');
+        }
         logger.info('✅ Admin user already exists');
       }
     } else {

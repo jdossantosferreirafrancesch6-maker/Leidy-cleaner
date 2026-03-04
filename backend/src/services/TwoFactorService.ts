@@ -2,6 +2,7 @@ import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import { query } from '../utils/database';
 import { logger } from '../utils/logger-advanced';
+import { t } from '../utils/i18n';
 
 export interface TwoFactorSecret {
   secret: string;
@@ -42,7 +43,7 @@ export class TwoFactorService {
       };
     } catch (error) {
       logger.error('Error generating TOTP secret:', error);
-      throw new Error('Failed to generate 2FA secret');
+      throw new Error(t('failedGenerate2FASecret'));
     }
   }
 
@@ -76,7 +77,7 @@ export class TwoFactorService {
       logger.info(`2FA enabled for user ${userId}`);
     } catch (error) {
       logger.error('Error enabling 2FA:', error);
-      throw new Error('Failed to enable 2FA');
+      throw new Error(t('failedEnable2FA'));
     }
   }
 
@@ -93,7 +94,7 @@ export class TwoFactorService {
       logger.info(`2FA disabled for user ${userId}`);
     } catch (error) {
       logger.error('Error disabling 2FA:', error);
-      throw new Error('Failed to disable 2FA');
+      throw new Error(t('failedDisable2FA'));
     }
   }
 
@@ -141,7 +142,7 @@ export class TwoFactorService {
       if (!secret) {
         return {
           verified: false,
-          message: '2FA not enabled for this user'
+          message: t('twoFANotEnabled')
         };
       }
 
@@ -157,7 +158,7 @@ export class TwoFactorService {
 
         return {
           verified: true,
-          message: '2FA verification successful'
+          message: t('twoFAVerificationSuccessful')
         };
       } else {
         // Registrar tentativa falhada
@@ -168,14 +169,14 @@ export class TwoFactorService {
 
         return {
           verified: false,
-          message: 'Invalid 2FA code'
+          message: t('invalid2FACode')
         };
       }
     } catch (error) {
       logger.error('Error validating 2FA code:', error);
       return {
         verified: false,
-        message: '2FA validation failed'
+        message: t('twoFAValidationFailed')
       };
     }
   }
@@ -204,7 +205,7 @@ export class TwoFactorService {
       );
     } catch (error) {
       logger.error('Error saving backup codes:', error);
-      throw new Error('Failed to save backup codes');
+      throw new Error(t('failedSaveBackupCodes'));
     }
   }
 

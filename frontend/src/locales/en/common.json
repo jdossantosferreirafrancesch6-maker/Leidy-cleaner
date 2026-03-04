@@ -1,0 +1,119 @@
+{
+  "title": "Leidy Cleaner - Professional Cleaning",
+  "description": "Professional cleaning services for homes and businesses. Book now!",
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "about": "About",
+    "contact": "Contact",
+    "gallery": "Gallery",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "profile": "Profile",
+  "roles": {
+    "admin": "Administrator",
+    "staff": "Staff",
+    "customer": "Customer"
+  },
+  "admin": {
+    "title": "Administration",
+    "manageBookings": "Manage Bookings",
+    "reviews": "Reviews"
+  },
+  "navItems": {
+    "bookings": "Bookings",
+    "favorites": "Favorites",
+    "personalization": "Personalization",
+    "tasks": "My Tasks"
+  },
+  "cookie": {
+    "message": "We use cookies to improve your experience.",
+    "accept": "Accept",
+    "learnMore": "Learn more"
+  },
+  "buttons": {
+    "register": "Register",
+    "book": "Book now",
+    "save": "Save",
+    "cancel": "Cancel",
+    "start": "Start Now",
+    "viewMore": "View All"
+  },
+  "home": {
+    "hero": {
+      "badge": "Premium Cleaning Service",
+      "title": "Professional Cleaning You",
+      "titleBold": "Deserve",
+      "subtitle": "Cleaning services for homes and businesses. Fast, reliable, and quality guaranteed!",
+      "cta1": "View Services",
+      "cta2": "Start Now"
+    },
+    "features": {
+      "title": "Why choose Leidy Cleaner?",
+      "subtitle": "Discover the benefits of hiring our professional services",
+      "feature1": {
+        "title": "100% Safe",
+        "description": "Verified professionals and protected payments"
+      },
+      "feature2": {
+        "title": "Fast Booking",
+        "description": "Schedule your appointment in a few clicks"
+      },
+      "feature3": {
+        "title": "Quality Guaranteed",
+        "description": "Real reviews from satisfied customers"
+      },
+      "feature4": {
+        "title": "Specialized Team",
+        "description": "Trained and experienced professionals"
+      }
+    }
+  },
+  "services": {
+    "title": "Our Services",
+    "subtitle": "Choose the perfect service for your needs",
+    "price": "Price",
+    "duration": "Duration",
+    "minutes": "minutes",
+    "viewDetails": "View Details"
+  },
+  "booking": {
+    "title": "Book a Service",
+    "selectService": "Select a service",
+    "selectDate": "Service date",
+    "selectTime": "Time",
+    "address": "Address",
+    "notes": "Notes",
+    "total": "Total",
+    "confirm": "Confirm Booking",
+    "success": "Booking confirmed successfully!"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "name": "Name",
+    "phone": "Phone",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "signUp": "Create Account",
+    "signIn": "Sign In",
+    "loginError": "Invalid email or password",
+    "registerError": "Error creating account"
+  },
+  "notifications": {
+    "success": "Success!",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information"
+  },
+  "language": {
+    "select": "Language",
+    "pt": "Português",
+    "en": "English"
+  }
+}

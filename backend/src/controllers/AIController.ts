@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest, ApiError } from '../middleware/errorHandler';
 import { AIService } from '../services/AIService';
 import { logger } from '../utils/logger-advanced';
+import { t } from '../utils/i18n';
 
 const aiService = new AIService();
 
@@ -11,19 +12,19 @@ export class AIController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        throw ApiError('Authentication required', 401);
+        throw ApiError(t('authenticationRequired'), 401);
       }
 
       const limit = parseInt(req.query.limit as string) || 5;
       const recommendations = await aiService.recommendServices(userId, limit);
 
       res.json({
-        message: 'Service recommendations retrieved successfully',
+        message: t('serviceRecommendations'),
         data: { recommendations }
       });
     } catch (error) {
       logger.error('Error getting service recommendations:', error);
-      throw ApiError('Failed to get recommendations', 500);
+      throw ApiError(t('failedGetRecommendations'), 500);
     }
   }
 
@@ -41,12 +42,12 @@ export class AIController {
       );
 
       res.json({
-        message: 'Staff recommendations retrieved successfully',
+        message: t('staffRecommendations'),
         data: { recommendations }
       });
     } catch (error) {
       logger.error('Error getting staff recommendations:', error);
-      throw ApiError('Failed to get staff recommendations', 500);
+      throw ApiError(t('failedGetStaffRecommendations'), 500);
     }
   }
 
@@ -56,18 +57,18 @@ export class AIController {
       const { query } = req.body;
 
       if (!query || typeof query !== 'string') {
-        throw ApiError('Query is required', 400);
+        throw ApiError(t('queryRequired'), 400);
       }
 
       const response = await aiService.processChatbotQuery(query);
 
       res.json({
-        message: 'Chatbot response generated',
+        message: t('chatbotResponse'),
         data: { response }
       });
     } catch (error) {
       logger.error('Error processing chatbot query:', error);
-      throw ApiError('Failed to process query', 500);
+      throw ApiError(t('failedProcessQuery'), 500);
     }
   }
 
@@ -76,22 +77,22 @@ export class AIController {
     try {
       // Only allow admin access
       if (req.user?.role !== 'admin') {
-        throw ApiError('Admin access required', 403);
+        throw ApiError(t('adminAccessRequired'), 403);
       }
 
       const analytics = await aiService.analyzeBookingPatterns();
 
       if (!analytics) {
-        throw ApiError('Failed to generate analytics', 500);
+        throw ApiError(t('failedGenerateAnalytics'), 500);
       }
 
       res.json({
-        message: 'Booking analytics retrieved successfully',
+        message: t('bookingAnalyticsRetrieved'),
         data: analytics
       });
     } catch (error) {
       logger.error('Error getting booking analytics:', error);
-      throw ApiError('Failed to get analytics', 500);
+      throw ApiError(t('failedGetAnalytics'), 500);
     }
   }
 }

@@ -3,6 +3,7 @@ import { hashPassword, comparePassword } from '../utils/password';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 import { logger } from '../utils/logger';
 import { ApiError } from '../middleware/errorHandler';
+import { t } from '../utils/i18n';
 import { User, UserResponse, JWTPayload } from '../types/auth';
 import crypto from 'crypto';
 import { decodeToken } from '../utils/jwt';
@@ -22,7 +23,7 @@ export class AuthService {
     );
 
     if (existingUsers.length > 0) {
-      throw ApiError('User with this email already exists', 400);
+      throw ApiError(t('userAlreadyExists'), 400);
     }
 
     // Determine role: first registered user becomes admin when no admin exists
@@ -67,7 +68,8 @@ export class AuthService {
     }
 
     if (!user || user.id === undefined || user.id === null) {
-      throw new Error('Failed to register user: no id returned from database');
+      // fallback string kept for safety if translation key missing
+      throw new Error(t('failedRegisterNoId') || 'Failed to register user: no id returned from database');
     }
 
     const userIdStr = String(user.id);
@@ -114,7 +116,7 @@ export class AuthService {
     );
 
     if (users.length === 0) {
-      throw ApiError('Invalid email or password', 400);
+      throw ApiError(t('loginError'), 400);
     }
 
     const user = users[0];
@@ -127,7 +129,7 @@ export class AuthService {
     const isPasswordValid = await comparePassword(password, user.password_hash);
 
     if (!isPasswordValid) {
-      throw ApiError('Invalid email or password', 400);
+      throw ApiError(t('loginError'), 400);
     }
 
     // Generate tokens
@@ -169,7 +171,7 @@ export class AuthService {
     // ensure token is not revoked
     const revoked = await AuthService.isRefreshTokenRevoked(refreshToken);
     if (revoked) {
-      throw ApiError('Invalid refresh token', 401);
+      throw ApiError(t('invalidRefreshToken'), 401);
     }
 
     const { accessToken, refreshToken: newRefreshToken } = generateTokens({

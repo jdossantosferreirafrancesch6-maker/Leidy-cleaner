@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt';
 import { logger } from '../utils/logger';
 import { ApiError, AuthRequest } from './errorHandler';
+import { t } from '../utils/i18n';
 
 export const authenticateToken = (
   req: AuthRequest,
@@ -13,7 +14,7 @@ export const authenticateToken = (
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      throw ApiError('No token provided', 401);
+      throw ApiError(t('noTokenProvided'), 401);
     }
 
     const user = verifyToken(token);
@@ -38,12 +39,12 @@ export const authenticateToken = (
 export const authorizeRole = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return res.status(401).json({ error: 'Not authenticated' });
+      return res.status(401).json({ error: t('notAuthenticated') });
     }
 
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
-        error: 'Insufficient permissions',
+        error: t('insufficientPermissions'),
       });
     }
 

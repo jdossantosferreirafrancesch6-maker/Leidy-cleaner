@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
 import Sentry from '../utils/sentry';
+import { t } from '../utils/i18n';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -22,7 +23,8 @@ export const errorHandler = (
   _next: NextFunction
 ) => {
   const status = err.status || 500;
-  const message = err.message || 'Internal Server Error';
+  // translate message if possible
+  const message = t(err.message || 'Internal Server Error');
 
   // Log detalhado do erro
   logger.error(`[${status}] ${message}`, {

@@ -39,8 +39,14 @@ export default function DashboardPage() {
 
   const handlePayment = async (bookingId: string) => {
     try {
-      await apiClient.checkoutBooking(bookingId);
-      // Refresh bookings after payment
+      const result = await apiClient.checkoutBooking(bookingId);
+      // stripe may return a URL to redirect the user
+      if (result.url) {
+        window.location.href = result.url;
+        return;
+      }
+
+      // otherwise we got back an updated booking (fallback mode)
       await loadBookings();
       alert('Pagamento processado com sucesso!');
     } catch (err) {

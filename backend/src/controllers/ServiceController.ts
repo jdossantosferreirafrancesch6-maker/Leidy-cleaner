@@ -5,6 +5,7 @@ import { serviceSchema, serviceUpdateSchema } from '../utils/schemas';
 import { cacheService } from '../services/CacheService';
 import { camelize } from '../utils/transformers';
 import { UserRole } from '../utils/constants';
+import { t } from '../utils/i18n';
 
 export class ServiceController {
   static getAll = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -14,7 +15,7 @@ export class ServiceController {
     const cachedResult = await cacheService.getServices();
     if (cachedResult) {
       return res.status(200).json({
-        message: 'Services retrieved (cached)',
+        message: t('servicesRetrievedCached'),
         data: { services: cachedResult, cached: true },
       });
     }
@@ -39,7 +40,7 @@ export class ServiceController {
     await cacheService.setServices(result.services);
 
     return res.status(200).json({
-      message: 'Services retrieved',
+      message: t('servicesRetrieved'),
       data: responseData,
     });
   });
@@ -50,11 +51,11 @@ export class ServiceController {
     const service = await ServiceService.getById(id);
 
     if (!service) {
-      throw ApiError('Service not found', 404);
+      throw ApiError(t('serviceNotFound'), 404);
     }
 
     res.status(200).json({
-      message: 'Service retrieved',
+      message: t('serviceRetrieved'),
       data: { service: camelize(service) },
     });
   });
@@ -69,7 +70,7 @@ export class ServiceController {
 
     // Then check admin role
     if (req.user?.role !== UserRole.ADMIN) {
-      throw ApiError('Only admins can create services', 403);
+      throw ApiError(t('onlyAdminsCreateServices'), 403);
     }
 
     const service = await ServiceService.create({
@@ -84,7 +85,7 @@ export class ServiceController {
     cacheService.clearAll();
 
     res.status(201).json({
-      message: 'Service created successfully',
+      message: t('serviceCreated'),
       data: { service: camelize(service) },
     });
   });
@@ -103,17 +104,17 @@ export class ServiceController {
 
     // Then check admin role
     if (req.user?.role !== UserRole.ADMIN) {
-      throw ApiError('Only admins can update services', 403);
+      throw ApiError(t('onlyAdminsUpdateServices'), 403);
     }
 
     const service = await ServiceService.update(id, value);
 
     if (!service) {
-      throw ApiError('Service not found', 404);
+      throw ApiError(t('serviceNotFound'), 404);
     }
 
     res.status(200).json({
-      message: 'Service updated successfully',
+      message: t('serviceUpdated'),
       data: { service: camelize(service) },
     });
   });
@@ -121,7 +122,7 @@ export class ServiceController {
   static delete = asyncHandler(async (req: AuthRequest, res: Response) => {
     // Check admin role
     if (req.user?.role !== UserRole.ADMIN) {
-      throw ApiError('Only admins can delete services', 403);
+      throw ApiError(t('onlyAdminsDeleteServices'), 403);
     }
 
     const { id } = req.params as { id: string };
@@ -129,13 +130,13 @@ export class ServiceController {
     const service = await ServiceService.getById(id);
 
     if (!service) {
-      throw ApiError('Service not found', 404);
+      throw ApiError(t('serviceNotFound'), 404);
     }
 
     await ServiceService.delete(id);
 
     res.status(200).json({
-      message: 'Service deleted successfully',
+      message: t('serviceDeleted'),
     });
   });
 
@@ -143,7 +144,7 @@ export class ServiceController {
     const categories = await ServiceService.getCategories();
 
     res.status(200).json({
-      message: 'Categories retrieved',
+      message: t('categoriesRetrieved'),
       data: { categories },
     });
   });

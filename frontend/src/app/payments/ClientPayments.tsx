@@ -24,7 +24,9 @@ export default function ClientPayments() {
     }
   }, [bookingId]);
 
-  const handlePay = async (e: React.FormEvent) => {
+  const stripeKey = process.env.NEXT_PUBLIC_STRIPE_KEY;
+
+  const handlePixPay = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage('Gerando PIX...');
     try {
@@ -38,6 +40,22 @@ export default function ClientPayments() {
       }
     } catch (err: any) {
       setMessage(err.message || 'Erro ao gerar PIX. Tente novamente.');
+    }
+  };
+
+  const handleCardPay = async () => {
+    if (!bookingId) return;
+    try {
+      const resp = await apiClient.checkoutBooking(bookingId);
+      if (resp.url) {
+        window.location.href = resp.url;
+        return;
+      }
+      // fallback updated booking
+      setBooking(resp.booking || null);
+      setMessage('Pagamento processado com sucesso!');
+    } catch (err: any) {
+      setMessage(err.message || 'Erro ao processar pagamento com cartão.');
     }
   };
 
@@ -75,11 +93,21 @@ export default function ClientPayments() {
           </div>
         )}
         {!showQrCode ? (
-          <form onSubmit={handlePay} className="space-y-3 bg-white p-4 rounded shadow">
-            <button className="w-full bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700">
-              Gerar PIX
-            </button>
-          </form>
+          <div className="space-y-3 bg-white p-4 rounded shadow">
+            {stripeKey && (
+              <button
+                onClick={handleCardPay}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 mb-2"
+              >
+                Pagar com Cartão
+              </button>
+            )}
+            <form onSubmit={handlePixPay} className="space-y-3">
+              <button className="w-full bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700">
+                Gerar PIX
+              </button>
+            </form>
+          </div>
         ) : (
           <div className="space-y-3 bg-white p-4 rounded shadow">
             <div className="text-center">

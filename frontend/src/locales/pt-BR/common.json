@@ -1,0 +1,119 @@
+{
+  "title": "Leidy Cleaner - Limpeza Profissional",
+  "description": "Serviços de limpeza profissional para residências e empresas. Agende agora mesmo!",
+  "nav": {
+    "home": "Início",
+    "services": "Serviços",
+    "about": "Sobre",
+    "contact": "Contato",
+    "gallery": "Galeria",
+    "login": "Entrar",
+    "logout": "Sair"
+  },
+  "profile": "Perfil",
+  "roles": {
+    "admin": "Administrador",
+    "staff": "Profissional",
+    "customer": "Cliente"
+  },
+  "admin": {
+    "title": "Administração",
+    "manageBookings": "Gerenciar Agendamentos",
+    "reviews": "Avaliações"
+  },
+  "navItems": {
+    "bookings": "Agendamentos",
+    "favorites": "Favoritos",
+    "personalization": "Personalizar",
+    "tasks": "Minhas Tarefas"
+  },
+  "cookie": {
+    "message": "Usamos cookies para melhorar sua experiência.",
+    "accept": "Aceitar",
+    "learnMore": "Saiba mais"
+  },
+  "buttons": {
+    "register": "Cadastrar",
+    "book": "Agendar",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "start": "Começar Agora",
+    "viewMore": "Ver Tudo"
+  },
+  "home": {
+    "hero": {
+      "badge": "Serviço Premium de Limpeza",
+      "title": "Limpeza Profissional que",
+      "titleBold": "Você Merece",
+      "subtitle": "Serviços de limpeza para residências e empresas. Rápido, confiável e com qualidade garantida!",
+      "cta1": "Ver Serviços",
+      "cta2": "Começar Agora"
+    },
+    "features": {
+      "title": "Por que escolher a Leidy Cleaner?",
+      "subtitle": "Descubra os benefícios de contratar nossos serviços profissionais",
+      "feature1": {
+        "title": "100% Seguro",
+        "description": "Profissionais verificados e pagamentos protegidos"
+      },
+      "feature2": {
+        "title": "Agendamento Rápido",
+        "description": "Marque seu horário em poucos cliques"
+      },
+      "feature3": {
+        "title": "Qualidade Garantida",
+        "description": "Avaliações reais de clientes satisfeitos"
+      },
+      "feature4": {
+        "title": "Equipe Especializada",
+        "description": "Profissionais treinados e experientes"
+      }
+    }
+  },
+  "services": {
+    "title": "Nossos Serviços",
+    "subtitle": "Escolha o serviço perfeito para suas necessidades",
+    "price": "Preço",
+    "duration": "Duração",
+    "minutes": "minutos",
+    "viewDetails": "Ver Detalhes"
+  },
+  "booking": {
+    "title": "Agendar Serviço",
+    "selectService": "Selecione um serviço",
+    "selectDate": "Data do serviço",
+    "selectTime": "Horário",
+    "address": "Endereço",
+    "notes": "Observações",
+    "total": "Total",
+    "confirm": "Confirmar Agendamento",
+    "success": "Agendamento confirmado com sucesso!"
+  },
+  "auth": {
+    "login": "Entrar",
+    "register": "Cadastrar-se",
+    "email": "E-mail",
+    "password": "Senha",
+    "confirmPassword": "Confirmar Senha",
+    "name": "Nome",
+    "phone": "Telefone",
+    "forgotPassword": "Esqueceu a senha?",
+    "noAccount": "Não tem conta?",
+    "haveAccount": "Já tem conta?",
+    "signUp": "Criar Conta",
+    "signIn": "Entrar",
+    "loginError": "E-mail ou senha incorretos",
+    "registerError": "Erro ao criar conta"
+  },
+  "notifications": {
+    "success": "Sucesso!",
+    "error": "Erro",
+    "warning": "Aviso",
+    "info": "Informação"
+  },
+  "language": {
+    "select": "Idioma",
+    "pt": "Português",
+    "en": "English"
+  }
+}

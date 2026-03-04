@@ -10,6 +10,7 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import NotificationBanner from '@/components/NotificationBanner';
 import CookieBanner from '@/components/CookieBanner';
 import Chatbot from '@/components/Chatbot';
+import I18nProvider from '@/i18n/I18nProvider';
 
 export const metadata: Metadata = {
   title: 'Leidy Cleaner - Limpeza Profissional',
@@ -45,10 +46,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <ThemeProvider>
             <AuthProvider>
               <NotificationProvider>
-                <Navbar />
-                <CookieBanner />
-                <main className="min-h-screen">{children}</main>
-                <Chatbot />
+                <I18nProvider>
+                  <Navbar />
+                  <CookieBanner />
+                  <main className="min-h-screen">{children}</main>
+                  <Chatbot />
+                </I18nProvider>
               </NotificationProvider>
             </AuthProvider>
           </ThemeProvider>

@@ -517,7 +517,7 @@ class ApiClient {
     }
   }
 
-  async checkoutBooking(bookingId: string): Promise<{ booking: Booking }> {
+  async checkoutBooking(bookingId: string): Promise<{ booking?: Booking; url?: string }> {
     try {
       const response = await this.client.post('/payments/checkout', { bookingId });
       return response.data.data;

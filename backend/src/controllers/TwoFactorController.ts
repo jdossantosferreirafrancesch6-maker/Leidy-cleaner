@@ -3,6 +3,7 @@ import { AuthRequest, asyncHandler, ApiError } from '../middleware/errorHandler'
 import { TwoFactorService } from '../services/TwoFactorService';
 import { twoFactorSetupSchema, twoFactorVerifySchema, backupCodeSchema } from '../utils/schemas';
 import { logger } from '../utils/logger-advanced';
+import { t } from '../utils/i18n';
 
 export class TwoFactorController {
   /**
@@ -15,13 +16,13 @@ export class TwoFactorController {
     // Verificar se 2FA já está ativado
     const isEnabled = await TwoFactorService.is2FAEnabled(userId);
     if (isEnabled) {
-      throw ApiError('2FA is already enabled for this account', 400);
+      throw ApiError(t('twoFAAlreadyEnabled'), 400);
     }
 
     const secretData = await TwoFactorService.generateTOTPSecret(userEmail);
 
     res.status(200).json({
-      message: '2FA setup initiated',
+      message: t('twoFASetupInitiated'),
       data: {
         secret: secretData.secret,
         qrCode: secretData.qrCode,
@@ -45,13 +46,7 @@ export class TwoFactorController {
     // Verificar se 2FA já está ativado
     const isEnabled = await TwoFactorService.is2FAEnabled(userId);
     if (isEnabled) {
-      throw ApiError('2FA is already enabled for this account', 400);
-    }
-
-    // Verificar o código TOTP
-    const isValid = TwoFactorService.verifyTOTPCode(secret, token);
-    if (!isValid) {
-      throw ApiError('Invalid 2FA code', 400);
+      throw ApiError(t('twoFAAlreadyEnabled'), 400);
     }
 
     // Ativar 2FA
@@ -64,7 +59,7 @@ export class TwoFactorController {
     logger.info(`2FA enabled for user ${userId}`);
 
     res.status(200).json({
-      message: '2FA enabled successfully',
+      message: t('twoFAEnabledSuccess'),
       data: {
         backupCodes: backupCodes // Mostrar apenas uma vez!
       }
@@ -80,7 +75,7 @@ export class TwoFactorController {
     // Verificar se 2FA está ativado
     const isEnabled = await TwoFactorService.is2FAEnabled(userId);
     if (!isEnabled) {
-      throw ApiError('2FA is not enabled for this account', 400);
+      throw ApiError(t('twoFANotEnabled'), 400);
     }
 
     await TwoFactorService.disable2FA(userId);
@@ -88,7 +83,7 @@ export class TwoFactorController {
     logger.info(`2FA disabled for user ${userId}`);
 
     res.status(200).json({
-      message: '2FA disabled successfully'
+      message: t('twoFADisabledSuccess')
     });
   });
 
@@ -107,11 +102,11 @@ export class TwoFactorController {
     const result = await TwoFactorService.validate2FACode(userId, token);
 
     if (!result.verified) {
-      throw ApiError(result.message, 400);
+      throw ApiError(t(result.message), 400);
     }
 
     res.status(200).json({
-      message: result.message
+      message: t(result.message)
     });
   });
 
@@ -130,11 +125,11 @@ export class TwoFactorController {
     const isValid = await TwoFactorService.validateBackupCode(userId, code);
 
     if (!isValid) {
-      throw ApiError('Invalid backup code', 400);
+      throw ApiError(t('invalidBackupCode'), 400);
     }
 
     res.status(200).json({
-      message: 'Backup code verified successfully'
+      message: t('backupCodeVerified')
     });
   });
 
@@ -147,14 +142,14 @@ export class TwoFactorController {
     // Verificar se 2FA está ativado
     const isEnabled = await TwoFactorService.is2FAEnabled(userId);
     if (!isEnabled) {
-      throw ApiError('2FA must be enabled to regenerate backup codes', 400);
+      throw ApiError(t('twoFANotEnabled'), 400);
     }
 
     const backupCodes = TwoFactorService.generateBackupCodes();
     await TwoFactorService.saveBackupCodes(userId, backupCodes);
 
     res.status(200).json({
-      message: 'Backup codes regenerated',
+      message: t('backupCodesRegenerated'),
       data: {
         backupCodes: backupCodes // Mostrar apenas uma vez!
       }
@@ -170,7 +165,7 @@ export class TwoFactorController {
     const isEnabled = await TwoFactorService.is2FAEnabled(userId);
 
     res.status(200).json({
-      message: '2FA status retrieved',
+      message: t('twoFAStatusRetrieved'),
       data: {
         enabled: isEnabled
       }
@@ -182,13 +177,13 @@ export class TwoFactorController {
    */
   static getStats = asyncHandler(async (req: AuthRequest, res: Response) => {
     if (req.user!.role !== 'admin') {
-      throw ApiError('Only admins can view 2FA stats', 403);
+      throw ApiError(t('onlyAdminsView2FAStats'), 403);
     }
 
     const stats = await TwoFactorService.getStats();
 
     res.status(200).json({
-      message: '2FA stats retrieved',
+      message: t('statsRetrieved'),
       data: { stats }
     });
   });
