@@ -8,7 +8,8 @@ export default {
   moduleDirectories: ['node_modules', 'src'],
   moduleNameMapper: {
     '^@\/(.*)$': '<rootDir>/src/$1',
-    '^.+\\.[css|scss|sass]+$': 'identity-obj-proxy',
+    // map any CSS/SCSS/SASS imports to identity-obj-proxy for jest
+    '\\.(css|scss|sass)$': 'identity-obj-proxy',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.next/', '/tests/']
 }

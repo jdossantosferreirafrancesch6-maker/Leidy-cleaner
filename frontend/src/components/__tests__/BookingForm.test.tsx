@@ -2,6 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import BookingForm from '../BookingForm';
 import { apiClient } from '@/services/api';
+import I18nProvider from '@/i18n/I18nProvider';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 jest.mock('@/services/api');
 const mockedApi = apiClient as jest.Mocked<typeof apiClient>;
@@ -19,7 +21,13 @@ describe('BookingForm', () => {
     mockedApi.createBooking.mockResolvedValue({ id: 'b1' } as any);
 
     const onSuccess = jest.fn();
-    const renderResult = render(<BookingForm serviceId="svc1" onSuccess={onSuccess} />);
+    const renderResult = render(
+      <I18nProvider>
+        <ThemeProvider>
+          <BookingForm serviceId="svc1" onSuccess={onSuccess} />
+        </ThemeProvider>
+      </I18nProvider>
+    );
 
     // wait for staff dropdown to appear
     await screen.findByText(/Staff One/i);
@@ -28,7 +36,11 @@ describe('BookingForm', () => {
     const future = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     // rerender with initialDate set
     renderResult.rerender(
-      <BookingForm serviceId="svc1" initialDate={future} onSuccess={onSuccess} />
+      <I18nProvider>
+        <ThemeProvider>
+          <BookingForm serviceId="svc1" initialDate={future} onSuccess={onSuccess} />
+        </ThemeProvider>
+      </I18nProvider>
     );
     // fill address and select staff
     fireEvent.change(screen.getByLabelText(/Endereço/i), { target: { value: 'Rua Teste' } });
