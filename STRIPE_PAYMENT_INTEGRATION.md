@@ -34,6 +34,7 @@ Routes:
 - POST /api/v1/payments/checkout  → Create session or pay immediately
 - POST /api/v1/payments/pix       → Get PIX payment details
 - POST /api/v1/payments/pix/confirm → Confirm PIX received
+- POST /api/v1/payments/refund    → Issue refund (admin or owner)
 - POST /api/v1/payments/webhook   → Stripe webhook handler
 ```
 
@@ -157,6 +158,13 @@ curl -X POST http://localhost:3000/api/v1/payments/pix/confirm \
   -d '{"bookingId": "123"}'
 ```
 
+### Refund a Booking
+```bash
+curl -X POST http://localhost:3000/api/v1/payments/refund \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"bookingId": "123"}'
+```
 ### Webhook Simulation (Testing)
 ```bash
 curl -X POST http://localhost:3000/api/v1/payments/webhook \

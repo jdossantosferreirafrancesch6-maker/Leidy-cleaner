@@ -52,3 +52,72 @@ describe('PaymentController webhook handling', () => {
     expect(status).toHaveBeenCalledWith(200);
   });
 });
+
+// tests for refund endpoint
+
+describe('PaymentController refund flow', () => {
+  let bookingMock: any;
+  beforeEach(() => {
+    jest.resetAllMocks();
+    bookingMock = { id: 'abc', user_id: 'u1', stripe_charge_id: 'ch_123' };
+    // spy on the default export directly to avoid module resolution issues
+    const BookingSvc = require('../../services/BookingService').default;
+    jest.spyOn(BookingSvc, 'getById').mockResolvedValue(bookingMock as any);
+    jest.spyOn(require('../../services/PaymentService').default, 'processRefund').mockResolvedValue({ id: 'abc', payment_status: 'refunded' } as any);
+  });
+
+  it('returns 401 when not authenticated by calling next', async () => {
+    const req: any = { body: { bookingId: 'abc' } };
+    const next = jest.fn();
+    await PaymentController.refundBooking(req, {} as any, next);
+    expect(next).toHaveBeenCalled();
+    const err = next.mock.calls[0][0];
+    expect(err.status).toBe(401);
+  });
+
+  it('calls next with error when bookingId missing', async () => {
+    const req: any = { body: {}, user: { id: 'u1', role: 'customer' } };
+    const next = jest.fn();
+    await PaymentController.refundBooking(req, {} as any, next);
+    expect(next).toHaveBeenCalled();
+    const err = next.mock.calls[0][0];
+    expect(err.status).toBe(400);
+  });
+
+  it('calls next with error if user not owner or admin', async () => {
+    const req: any = { body: { bookingId: 'abc' }, user: { id: 'other', role: 'customer' } };
+    const json = jest.fn();
+    const status = jest.fn().mockReturnValue({ json });
+    const res: any = { status };
+    const next = jest.fn();
+    await PaymentController.refundBooking(req, res, next);
+    expect(next).toHaveBeenCalled();
+    const err = next.mock.calls[0][0];
+    expect(err.status).toBe(403);
+  });
+
+  it('processes refund and invokes service', async () => {
+    const req: any = { body: { bookingId: 'abc' }, user: { id: 'u1', role: 'customer' } };
+    const json = jest.fn();
+    const status = jest.fn().mockReturnValue({ json });
+    const res: any = { status };
+
+    // stub Stripe and refund method
+    process.env.STRIPE_SECRET_KEY = 'sk_test';
+    const refundMock = jest.fn().mockResolvedValue({ id: 're_123' });
+    ((Stripe as unknown) as jest.Mock).mockImplementation(() => ({ refunds: { create: refundMock } }));
+
+    // avoid touching DB by stubbing the service
+    const processSpy = jest
+      .spyOn(require('../../services/PaymentService').default, 'processRefund')
+      .mockResolvedValue(bookingMock as any);
+
+    const next = jest.fn();
+    await PaymentController.refundBooking(req, res, next);
+    expect(refundMock).toHaveBeenCalledWith({ charge: bookingMock.stripe_charge_id });
+    expect(processSpy).toHaveBeenCalledWith('abc', 're_123');
+    expect(next).not.toHaveBeenCalled();
+    expect(status).toHaveBeenCalledWith(200);
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ data: { booking: expect.any(Object), stripeRefund: expect.any(Object) } }));
+  });
+});

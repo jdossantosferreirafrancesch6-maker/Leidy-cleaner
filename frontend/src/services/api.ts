@@ -535,6 +535,27 @@ class ApiClient {
     }
   }
 
+  async getAdminRefunds(startDate?: string, endDate?: string): Promise<{ refunds: any[]; count: number }> {
+    try {
+      const params: any = {};
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      const response = await this.client.get('/payments/admin/refunds', { params });
+      return response.data.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getAdminRefundDetail(bookingId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/payments/admin/refunds/${bookingId}`);
+      return response.data.data.refund;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async getStats(): Promise<{ users: number; services: number; bookings: number; pendingReviews?: number }> {
     try {
       const response = await this.client.get('/admin/stats');

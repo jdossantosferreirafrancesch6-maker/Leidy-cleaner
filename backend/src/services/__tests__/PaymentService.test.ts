@@ -39,4 +39,20 @@ describe('PaymentService', () => {
     // assert on call parameters here to keep the unit test stable.
 
   });
+
+  it('processRefund updates booking and logs', async () => {
+    const sample = { id: 'b1', payment_status: 'refunded', total_price: 200 };
+    const dbSpy = jest.spyOn(require('../../utils/database'), 'query').mockResolvedValue([sample]);
+    const result = await PaymentService.processRefund('b1', 're_xyz');
+    expect(result).toEqual(sample);
+    expect(dbSpy).toHaveBeenCalled();
+  });
+
+  it('getRefundStatus returns status fields', async () => {
+    const sample = [{ payment_status: 'refunded', stripe_charge_id: 'ch_1' }];
+    jest.spyOn(require('../../utils/database'), 'query').mockResolvedValue(sample);
+    const status = await PaymentService.getRefundStatus('b1');
+    expect(status.paymentStatus).toBe('refunded');
+    expect(status.stripeChargeId).toBe('ch_1');
+  });
 });

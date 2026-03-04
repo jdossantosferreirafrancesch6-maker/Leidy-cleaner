@@ -45,6 +45,14 @@ O backend expõe uma API RESTful em `/api/v1`.
   - marca o agendamento como pago
 
 - `POST /api/v1/payments/checkout` (fallback Stripe)
+  - corpo: `{ bookingId }` – cria sessão Stripe ou paga imediatamente
+
+- `POST /api/v1/payments/refund` (refund endpoint)
+  - corpo: `{ bookingId }`
+  - apenas admin ou proprietário do agendamento pode solicitar
+  - tenta reembolsar via Stripe se `stripe_charge_id` estiver presente e a chave configurada
+  - marca o agendamento como `refunded` no banco de dados
+
 - `POST /api/v1/payments/webhook` (webhook Stripe)
 
 ## Analytics (somente admin)

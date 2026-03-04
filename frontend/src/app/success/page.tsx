@@ -2,11 +2,12 @@
 
 import React, { useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 
-export default function SuccessPage() {
+function SuccessPageContent() {
   const router = useRouter();
   const params = useSearchParams();
-  const bookingId = params.get('bookingId');
+  const bookingId = params?.get('bookingId');
 
   useEffect(() => {
     // after a short delay navigate back to either booking detail or dashboard
@@ -38,3 +39,7 @@ export default function SuccessPage() {
     </div>
   );
 }
+
+export default dynamic(() => Promise.resolve(SuccessPageContent), {
+  ssr: false,
+});

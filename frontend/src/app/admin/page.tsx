@@ -56,7 +56,8 @@ export default function AdminPage() {
         )}
         <p className="mb-4">CRUD básico de serviços (apenas admin).</p>
         <p className="mb-4">
-          <a href="/admin/reviews" className="text-blue-600 hover:underline">Gerenciar avaliações</a>
+          <a href="/admin/reviews" className="text-blue-600 hover:underline">Gerenciar avaliações</a> |{' '}
+          <a href="/admin/refunds" className="text-blue-600 hover:underline">Dashboard de Refunds</a>
         </p>
 
         <div className="mb-6">

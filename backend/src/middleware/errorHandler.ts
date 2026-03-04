@@ -91,7 +91,8 @@ export const asyncHandler = (
   fn: (req: AuthRequest, res: Response, next: NextFunction) => Promise<any>
 ) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+    // return the promise so callers (and tests) can await its completion
+    return Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
 
