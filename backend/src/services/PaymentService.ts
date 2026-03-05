@@ -8,13 +8,32 @@ export class PaymentService {
   // mark booking as paid/confirmed
   static async markBookingPaid(bookingId: string, stripeChargeId?: string) {
     // stripeChargeId is optional; if provided, we update the booking record
-    const result = await query(
-      `UPDATE bookings SET status = 'confirmed', payment_status = 'paid', \
-        stripe_charge_id = COALESCE($2, stripe_charge_id), \
-        updated_at = ${require('../utils/sql').sqlNow()} WHERE id = $1 RETURNING *`,
-      [bookingId, stripeChargeId || null]
-    );
-    return result.length > 0 ? result[0] : null;
+    try {
+      // For SQLite, separate UPDATE and SELECT instead of using RETURNING
+      let updateSql: string;
+      let updateParams: any[];
+      
+      if (stripeChargeId) {
+        updateSql = `UPDATE bookings SET status = 'confirmed', payment_status = 'paid', stripe_charge_id = $2, updated_at = ${require('../utils/sql').sqlNow()} WHERE id = $1`;
+        updateParams = [bookingId, stripeChargeId];
+      } else {
+        updateSql = `UPDATE bookings SET status = 'confirmed', payment_status = 'paid', updated_at = ${require('../utils/sql').sqlNow()} WHERE id = $1`;
+        updateParams = [bookingId];
+      }
+      
+      // Execute update
+      await query(updateSql, updateParams);
+      
+      // Then fetch it to return the updated record
+      const result = await query(
+        'SELECT * FROM bookings WHERE id = $1',
+        [bookingId]
+      );
+      return result.length > 0 ? result[0] : null;
+    } catch (err: any) {
+      logger.error('❌ markBookingPaid error:', err.message);
+      throw err;
+    }
   }
 
   /**
